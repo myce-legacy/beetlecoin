@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2016 The Dash developers
-// Copyright (c) 2016-2017 The PIVX developers
+// Copyright (c) 2016-2018 The PIVX developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -36,7 +36,7 @@ using namespace boost;
 #define SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT 10007
 #define SPORK_9_MASTERNODE_BUDGET_ENFORCEMENT 10008
 #define SPORK_10_MASTERNODE_PAY_UPDATED_NODES 10009
-#define SPORK_11_LOCK_INVALID_UTXO 10010
+//#define SPORK_11_LOCK_INVALID_UTXO 10010
 //#define SPORK_12_RECONSIDER_BLOCKS 10011
 #define SPORK_13_ENABLE_SUPERBLOCKS 10012
 #define SPORK_14_NEW_PROTOCOL_ENFORCEMENT 10013
@@ -51,7 +51,7 @@ using namespace boost;
 #define SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT_DEFAULT 4070908800 //OFF
 #define SPORK_9_MASTERNODE_BUDGET_ENFORCEMENT_DEFAULT 4070908800  //OFF
 #define SPORK_10_MASTERNODE_PAY_UPDATED_NODES_DEFAULT 4070908800  //OFF
-#define SPORK_11_LOCK_INVALID_UTXO_DEFAULT 4070908800             //OFF - NOTE: this is block height not time!
+//#define SPORK_11_LOCK_INVALID_UTXO_DEFAULT 4070908800             //OFF - NOTE: this is block height not time!
 #define SPORK_13_ENABLE_SUPERBLOCKS_DEFAULT 4070908800            //OFF
 #define SPORK_14_NEW_PROTOCOL_ENFORCEMENT_DEFAULT 4070908800      //OFF
 #define SPORK_15_NEW_PROTOCOL_ENFORCEMENT_2_DEFAULT 4070908800    //OFF
@@ -118,7 +118,7 @@ public:
     int GetSporkIDByName(std::string strName);
     bool UpdateSpork(int nSporkID, int64_t nValue);
     bool SetPrivKey(std::string strPrivKey);
-    bool CheckSignature(CSporkMessage& spork);
+    bool CheckSignature(CSporkMessage& spork, bool fCheckSigner = false);
     bool Sign(CSporkMessage& spork);
     void Relay(CSporkMessage& msg);
 };
