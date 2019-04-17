@@ -30,6 +30,12 @@
 
   <key>CFBundleExecutable</key>
   <string>BeetleCoin-Qt</string>
+  
+  <key>CFBundleName</key>
+  <string>BeetleCoin-Qt</string>
+
+  <key>LSHasLocalizedDisplayName</key>
+  <true/>
 
   <key>CFBundleIdentifier</key>
   <string>io.beetlecoin.BeetleCoin-Qt</string>
