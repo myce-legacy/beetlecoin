@@ -49,8 +49,8 @@ bool CMasternodeSync::IsBlockchainSynced()
     if (!lockMain) return false;
 
     CBlockIndex* pindex = chainActive.Tip();
-    if (pindex == NULL) return false;
 
+    if (!pindex) return false;
 
     if (pindex->nTime + 60 * 60 < GetTime())
         return false;

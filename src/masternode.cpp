@@ -66,6 +66,7 @@ CMasternode::CMasternode()
     pubKeyMasternode = CPubKey();
     sig = std::vector<unsigned char>();
     activeState = MASTERNODE_ENABLED;
+    deposit = 0 * COIN;
     sigTime = GetAdjustedTime();
     lastPing = CMasternodePing();
     cacheInputAge = 0;
@@ -91,6 +92,7 @@ CMasternode::CMasternode(const CMasternode& other)
     pubKeyMasternode = other.pubKeyMasternode;
     sig = other.sig;
     activeState = other.activeState;
+    deposit = other.deposit;
     sigTime = other.sigTime;
     lastPing = other.lastPing;
     cacheInputAge = other.cacheInputAge;
@@ -115,14 +117,21 @@ CMasternode::CMasternode(const CMasternodeBroadcast& mnb)
     pubKeyCollateralAddress = mnb.pubKeyCollateralAddress;
     pubKeyMasternode = mnb.pubKeyMasternode;
     sig = mnb.sig;
-    activeState = MASTERNODE_ENABLED;
+
+    if(IsDepositCoins(mnb.vin, deposit))
+        activeState = MASTERNODE_ENABLED;
+    else
+    {
+        deposit = 0u;
+        activeState = MASTERNODE_REMOVE;
+    }
+
     sigTime = mnb.sigTime;
     lastPing = mnb.lastPing;
     cacheInputAge = 0;
     cacheInputAgeBlock = 0;
     unitTest = false;
     allowFreeTx = true;
-    nActiveState = MASTERNODE_ENABLED,
     protocolVersion = mnb.protocolVersion;
     nLastDsq = mnb.nLastDsq;
     nScanningErrorCount = 0;
@@ -214,17 +223,29 @@ void CMasternode::Check(bool forceCheck)
     }
 
     if (!unitTest) {
-        CValidationState state;
+
+/*
         CMutableTransaction tx = CMutableTransaction();
         CTxOut vout = CTxOut(9999.99 * COIN, obfuScationPool.collateralPubKey);
         tx.vin.push_back(vin);
         tx.vout.push_back(vout);
+*/
+        CMutableTransaction tx;
+
+        CValidationState state = CMasternodeMan::GetInputCheckingTx(vin, tx);
+
+        if(!state.IsValid()) {
+            activeState = MASTERNODE_VIN_SPENT;
+            return;
+        }
 
         {
             TRY_LOCK(cs_main, lockMain);
-            if (!lockMain) return;
 
-            if (!AcceptableInputs(mempool, state, CTransaction(tx), false, NULL)) {
+            if (!lockMain)
+                return;
+
+            if (!AcceptableInputs(mempool, state, CTransaction(tx), false, nullptr)) {
                 activeState = MASTERNODE_VIN_SPENT;
                 return;
             }
@@ -255,7 +276,9 @@ int64_t CMasternode::SecondsSincePayment()
 int64_t CMasternode::GetLastPaid()
 {
     CBlockIndex* pindexPrev = chainActive.Tip();
-    if (pindexPrev == NULL) return false;
+
+    if (!pindexPrev)
+        return false;
 
     CScript mnpayee;
     mnpayee = GetScriptForDestination(pubKeyCollateralAddress.GetID());
@@ -268,11 +291,9 @@ int64_t CMasternode::GetLastPaid()
     // use a deterministic offset to break a tie -- 2.5 minutes
     int64_t nOffset = hash.GetCompact(false) % 150;
 
-    if (chainActive.Tip() == NULL) return false;
+    const CBlockIndex* BlockReading = pindexPrev;
 
-    const CBlockIndex* BlockReading = chainActive.Tip();
-
-    int nMnCount = mnodeman.CountEnabled() * 1.25;
+    int nMnCount = mnodeman.CountEnabled(Level()) / 100 * 125;
     int n = 0;
     for (unsigned int i = 1; BlockReading && BlockReading->nHeight > 0; i++) {
         if (n >= nMnCount) {
@@ -328,6 +349,114 @@ bool CMasternode::IsValidNetAddr()
     // should probably be a bit smarter if one day we start to implement tests for this
     return Params().NetworkID() == CBaseChainParams::REGTEST ||
            (IsReachable(addr) && addr.IsRoutable());
+}
+
+unsigned CMasternode::Level(CAmount vin_val, int blockHeight)
+{
+    if (blockHeight >= 0 && blockHeight < 2000) {
+      switch(vin_val) {
+          case 250 * COIN: return 1;
+          case 500 * COIN: return 2;
+          case 1000 * COIN: return 3;
+      }
+    } else if (blockHeight >= 2000 && blockHeight < 10000) {
+      switch(vin_val) {
+          case 500 * COIN: return 1;
+          case 1000 * COIN: return 2;
+          case 1500 * COIN: return 3;
+      }
+    } else if (blockHeight >= 10000 && blockHeight < 30000) {
+      switch(vin_val) {
+          case 1000 * COIN: return 1;
+          case 1500 * COIN: return 2;
+          case 3000 * COIN: return 3;
+      }
+    } else if (blockHeight >= 30000 && blockHeight < 60000) {
+      switch(vin_val) {
+          case 1500 * COIN: return 1;
+          case 3000 * COIN: return 2;
+          case 4000 * COIN: return 3;
+      }
+    } else if (blockHeight >= 60000 && blockHeight < 100000) {
+      switch(vin_val) {
+          case 3000 * COIN: return 1;
+          case 4000 * COIN: return 2;
+          case 6000 * COIN: return 3;
+      }
+    } else if (blockHeight >= 100000 && blockHeight < 180000) {
+      switch(vin_val) {
+          case 4000 * COIN: return 1;
+          case 6000 * COIN: return 2;
+          case 8000 * COIN: return 3;
+      }
+    } else if (blockHeight >= 180000 && blockHeight < 250000) {
+      switch(vin_val) {
+          case 6000 * COIN: return 1;
+          case 8000 * COIN: return 2;
+          case 10000 * COIN: return 3;
+      }
+    } else if (blockHeight >= 250000 && blockHeight < 500000) {
+      switch(vin_val) {
+          case 80000 * COIN: return 1;
+          case 100000 * COIN: return 2;
+          case 150000 * COIN: return 3;
+      }
+    } else if (blockHeight >= 500000 && blockHeight < 750000) {
+      switch(vin_val) {
+          case 100000 * COIN: return 1;
+          case 150000 * COIN: return 2;
+          case 200000 * COIN: return 3;
+      }
+    } else if (blockHeight >= 750000 && blockHeight < 1250000) {
+      switch(vin_val) {
+          case 150000 * COIN: return 1;
+          case 200000 * COIN: return 2;
+          case 250000 * COIN: return 3;
+      }
+    } else {
+      switch(vin_val) {
+          case 200000 * COIN: return 1;
+          case 250000 * COIN: return 2;
+          case 300000 * COIN: return 3;
+      }
+    }
+
+    return 0;
+}
+
+unsigned CMasternode::Level(const CTxIn& vin, int blockHeight)
+{
+    CAmount vin_val;
+
+    if(!IsDepositCoins(vin, vin_val))
+        return LevelValue::UNSPECIFIED;
+
+    return Level(vin_val, blockHeight);
+}
+
+bool CMasternode::IsDepositCoins(CAmount vin_val)
+{
+    return Level(vin_val, chainActive.Height());
+}
+
+bool CMasternode::IsDepositCoins(const CTxIn& vin, CAmount& vin_val)
+{
+    CTransaction prevout_tx;
+    uint256      hashBlock = 0;
+
+    bool vin_valid =  GetTransaction(vin.prevout.hash, prevout_tx, hashBlock, true)
+                   && (vin.prevout.n < prevout_tx.vout.size());
+
+    if(!vin_valid)
+        return false;
+
+    CAmount vin_amount = prevout_tx.vout[vin.prevout.n].nValue;
+
+    if(!IsDepositCoins(vin_amount))
+        return false;
+
+    vin_val = vin_amount;
+    return true;
 }
 
 CMasternodeBroadcast::CMasternodeBroadcast()
@@ -421,7 +550,7 @@ bool CMasternodeBroadcast::Create(std::string strService, std::string strKeyMast
     if(!CheckDefaultPort(strService, strErrorRet, "CMasternodeBroadcast::Create"))
         return false;
 
-    return Create(txin, CService(strService), keyCollateralAddressNew, pubKeyCollateralAddressNew, keyMasternodeNew, pubKeyMasternodeNew, strErrorRet, mnbRet);
+    return Create(txin, CService{strService}, keyCollateralAddressNew, pubKeyCollateralAddressNew, keyMasternodeNew, pubKeyMasternodeNew, strErrorRet, mnbRet);
 }
 
 bool CMasternodeBroadcast::Create(CTxIn txin, CService service, CKey keyCollateralAddressNew, CPubKey pubKeyCollateralAddressNew, CKey keyMasternodeNew, CPubKey pubKeyMasternodeNew, std::string& strErrorRet, CMasternodeBroadcast& mnbRet)
@@ -535,7 +664,8 @@ bool CMasternodeBroadcast::CheckAndUpdate(int& nDos)
     CMasternode* pmn = mnodeman.Find(vin);
 
     // no such masternode, nothing to update
-    if (pmn == NULL) return true;
+    if (!pmn)
+        return true;
 
     // this broadcast is older or equal than the one that we already have - it's bad and should never happen
 	// unless someone is doing something fishy
@@ -576,19 +706,30 @@ bool CMasternodeBroadcast::CheckInputsAndAdd(int& nDoS)
     // search existing Masternode list
     CMasternode* pmn = mnodeman.Find(vin);
 
-    if (pmn != NULL) {
+    if(pmn) {
         // nothing to do here if we already know about this masternode and it's enabled
-        if (pmn->IsEnabled()) return true;
+        if (pmn->IsEnabled())
+            return true;
         // if it's not enabled, remove old MN first and continue
         else
             mnodeman.Remove(pmn->vin);
     }
 
-    CValidationState state;
+/*
     CMutableTransaction tx = CMutableTransaction();
     CTxOut vout = CTxOut(9999.99 * COIN, obfuScationPool.collateralPubKey);
     tx.vin.push_back(vin);
     tx.vout.push_back(vout);
+*/
+
+    CMutableTransaction tx;
+
+    CValidationState state = CMasternodeMan::GetInputCheckingTx(vin, tx);
+
+    if(!state.IsValid()) {
+        state.IsInvalid(nDoS);
+        return false;
+    }
 
     {
         TRY_LOCK(cs_main, lockMain);
