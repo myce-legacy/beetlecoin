@@ -33,7 +33,7 @@
 #include "util.h"
 #include "utilmoneystr.h"
 #include "validationinterface.h"
-#include "zpivchain.h"
+#include "zbeetchain.h"
 
 #include "primitives/zerocoin.h"
 #include "libzerocoin/Denominations.h"
@@ -954,16 +954,16 @@ bool ContextualCheckZerocoinMint(const CTransaction& tx, const PublicCoin& coin,
 
 bool ContextualCheckZerocoinSpend(const CTransaction& tx, const CoinSpend& spend, CBlockIndex* pindex, const uint256& hashBlock)
 {
-    //Check to see if the zPIV is properly signed
+    //Check to see if the zBEET is properly signed
     if (pindex->nHeight >= Params().Zerocoin_Block_V2_Start()) {
         if (!spend.HasValidSignature())
-            return error("%s: V2 zPIV spend does not have a valid signature", __func__);
+            return error("%s: V2 zBEET spend does not have a valid signature", __func__);
 
         libzerocoin::SpendType expectedType = libzerocoin::SpendType::SPEND;
         if (tx.IsCoinStake())
             expectedType = libzerocoin::SpendType::STAKE;
         if (spend.getSpendType() != expectedType) {
-            return error("%s: trying to spend zPIV without the correct spend type. txid=%s", __func__,
+            return error("%s: trying to spend zBEET without the correct spend type. txid=%s", __func__,
                          tx.GetHash().GetHex());
         }
     }
@@ -971,14 +971,14 @@ bool ContextualCheckZerocoinSpend(const CTransaction& tx, const CoinSpend& spend
     //Reject serial's that are already in the blockchain
     int nHeightTx = 0;
     if (IsSerialInBlockchain(spend.getCoinSerialNumber(), nHeightTx))
-        return error("%s : zPIV spend with serial %s is already in block %d\n", __func__,
+        return error("%s : zBEET spend with serial %s is already in block %d\n", __func__,
                      spend.getCoinSerialNumber().GetHex(), nHeightTx);
 
     //Reject serial's that are not in the acceptable value range
     bool fUseV1Params = spend.getVersion() < libzerocoin::PrivateCoin::PUBKEY_VERSION;
     if (pindex->nHeight > Params().Zerocoin_Block_EnforceSerialRange() &&
         !spend.HasValidSerial(Params().Zerocoin_Params(fUseV1Params)))
-        return error("%s : zPIV spend with serial %s from tx %s is not in valid range\n", __func__,
+        return error("%s : zBEET spend with serial %s from tx %s is not in valid range\n", __func__,
                      spend.getCoinSerialNumber().GetHex(), tx.GetHash().GetHex());
 
     return true;
@@ -1286,7 +1286,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState& state, const CTransa
             //Check that txid is not already in the chain
             int nHeightTx = 0;
             if (IsTransactionInChain(tx.GetHash(), nHeightTx))
-                return state.Invalid(error("AcceptToMemoryPool : zPIV spend tx %s already in block %d",
+                return state.Invalid(error("AcceptToMemoryPool : zBEET spend tx %s already in block %d",
                                            tx.GetHash().GetHex(), nHeightTx), REJECT_DUPLICATE, "bad-txns-inputs-spent");
 
             //Check for double spending of serial #'s
@@ -1296,7 +1296,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState& state, const CTransa
                 CoinSpend spend = TxInToZerocoinSpend(txIn);
                 if (!ContextualCheckZerocoinSpend(tx, spend, chainActive.Tip(), 0))
                     return state.Invalid(error("%s: ContextualCheckZerocoinSpend failed for tx %s", __func__,
-                                               tx.GetHash().GetHex()), REJECT_INVALID, "bad-txns-invalid-zpiv");
+                                               tx.GetHash().GetHex()), REJECT_INVALID, "bad-txns-invalid-zbeet");
             }
         } else {
             LOCK(pool.cs);
@@ -1324,7 +1324,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState& state, const CTransa
                 }
             }
 
-            // Check that zPIV mints are not already known
+            // Check that zBEET mints are not already known
             if (tx.IsZerocoinMint()) {
                 for (auto& out : tx.vout) {
                     if (!out.IsZerocoinMint())
@@ -2665,7 +2665,7 @@ bool ReindexAccumulators(list<uint256>& listMissingCheckpoints, string& strError
     return true;
 }
 
-bool UpdateZPIVSupply(const CBlock& block, CBlockIndex* pindex)
+bool UpdateZBEETSupply(const CBlock& block, CBlockIndex* pindex)
 {
     std::list<CZerocoinMint> listMints;
     bool fFilterInvalid = pindex->nHeight >= Params().Zerocoin_Block_RecalculateAccumulators();
@@ -2844,7 +2844,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                     return state.DoS(100, error("%s: failed to add block %s with invalid zerocoinspend", __func__, tx.GetHash().GetHex()), REJECT_INVALID);
             }
 
-            // Check that zPIV mints are not already known
+            // Check that zBEET mints are not already known
             if (tx.IsZerocoinMint()) {
                 for (auto& out : tx.vout) {
                     if (!out.IsZerocoinMint())
@@ -2873,7 +2873,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 }
             }
 
-            // Check that zPIV mints are not already known
+            // Check that zBEET mints are not already known
             if (tx.IsZerocoinMint()) {
                 for (auto& out : tx.vout) {
                     if (!out.IsZerocoinMint())
@@ -2921,14 +2921,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     //A one-time event where money supply counts were off and recalculated on a certain block.
     if (pindex->nHeight == Params().Zerocoin_Block_RecalculateAccumulators() + 1) {
-        RecalculateZPIVMinted();
-        RecalculateZPIVSpent();
-        RecalculatePIVSupply(Params().Zerocoin_StartHeight());
+        RecalculateZBEETMinted();
+        RecalculateZBEETSpent();
+        RecalculateBEETSupply(Params().Zerocoin_StartHeight());
     }
 
-    //Track zPIV money supply in the block index
-    if (!UpdateZPIVSupply(block, pindex))
-        return state.DoS(100, error("%s: Failed to calculate new zPIV supply for block=%s height=%d", __func__,
+    //Track zBEET money supply in the block index
+    if (!UpdateZBEETSupply(block, pindex))
+        return state.DoS(100, error("%s: Failed to calculate new zBEET supply for block=%s height=%d", __func__,
                                     block.GetHash().GetHex(), pindex->nHeight), REJECT_INVALID);
 
     // track money supply and mint amount info
@@ -2990,7 +2990,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         setDirtyBlockIndex.insert(pindex);
     }
 
-    //Record zPIV serials
+    //Record zBEET serials
     set<uint256> setAddedTx;
     for (pair<CoinSpend, uint256> pSpend : vSpends) {
         // Send signal to wallet if this is ours
@@ -3131,7 +3131,7 @@ void static UpdateTip(CBlockIndex* pindexNew)
 {
     chainActive.SetTip(pindexNew);
 
-    // If turned on AutoZeromint will automatically convert PIV to zPIV
+    // If turned on AutoZeromint will automatically convert PIV to zBEET
     if (pwalletMain->isZeromintEnabled ())
         pwalletMain->AutoZeromint ();
 
@@ -4210,21 +4210,21 @@ bool AcceptBlockHeader(const CBlock& block, CValidationState& state, CBlockIndex
 bool ContextualCheckZerocoinStake(int nHeight, CStakeInput* stake)
 {
     if (nHeight < Params().Zerocoin_Block_V2_Start())
-        return error("%s: zPIV stake block is less than allowed start height", __func__);
+        return error("%s: zBEET stake block is less than allowed start height", __func__);
 
-    if (CZPivStake* zPIV = dynamic_cast<CZPivStake*>(stake)) {
-        CBlockIndex* pindexFrom = zPIV->GetIndexFrom();
+    if (CZBeetStake* zBEET = dynamic_cast<CZBeetStake*>(stake)) {
+        CBlockIndex* pindexFrom = zBEET->GetIndexFrom();
         if (!pindexFrom)
-            return error("%s: failed to get index associated with zPIV stake checksum", __func__);
+            return error("%s: failed to get index associated with zBEET stake checksum", __func__);
 
         if (chainActive.Height() - pindexFrom->nHeight < Params().Zerocoin_RequiredStakeDepth())
-            return error("%s: zPIV stake does not have required confirmation depth", __func__);
+            return error("%s: zBEET stake does not have required confirmation depth", __func__);
 
         //The checksum needs to be the exact checksum from 200 blocks ago
         uint256 nCheckpoint200 = chainActive[nHeight - Params().Zerocoin_RequiredStakeDepth()]->nAccumulatorCheckpoint;
-        uint32_t nChecksum200 = ParseChecksum(nCheckpoint200, libzerocoin::AmountToZerocoinDenomination(zPIV->GetValue()));
-        if (nChecksum200 != zPIV->GetChecksum())
-            return error("%s: accumulator checksum is different than the block 200 blocks previous. stake=%d block200=%d", __func__, zPIV->GetChecksum(), nChecksum200);
+        uint32_t nChecksum200 = ParseChecksum(nCheckpoint200, libzerocoin::AmountToZerocoinDenomination(zBEET->GetValue()));
+        if (nChecksum200 != zBEET->GetChecksum())
+            return error("%s: accumulator checksum is different than the block 200 blocks previous. stake=%d block200=%d", __func__, zBEET->GetChecksum(), nChecksum200);
     } else {
         return error("%s: dynamic_cast of stake ptr failed", __func__);
     }
@@ -4274,8 +4274,8 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
         if (!stake)
             return error("%s: null stake ptr", __func__);
 
-        if (stake->IsZPIV() && !ContextualCheckZerocoinStake(pindexPrev->nHeight, stake.get()))
-            return state.DoS(100, error("%s: staked zPIV fails context checks", __func__));
+        if (stake->IsZBEET() && !ContextualCheckZerocoinStake(pindexPrev->nHeight, stake.get()))
+            return state.DoS(100, error("%s: staked zBEET fails context checks", __func__));
 
         uint256 hash = block.GetHash();
         if(!mapProofOfStake.count(hash)) // add to mapProofOfStake

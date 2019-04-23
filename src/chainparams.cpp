@@ -10,6 +10,8 @@
 #include "random.h"
 #include "util.h"
 #include "utilstrencodings.h"
+#include "net.h"
+#include "base58.h"
 
 #include <assert.h>
 
@@ -196,7 +198,7 @@ public:
         base58Prefixes[SECRET_KEY] = std::vector<unsigned char>(1, 212);
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x02)(0x2D)(0x25)(0x33).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x02)(0x21)(0x31)(0x2B).convert_to_container<std::vector<unsigned char> >();
-        // 	BIP44 coin type is from https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+        //  BIP44 coin type is from https://github.com/satoshilabs/slips/blob/master/slip-0044.md
         base58Prefixes[EXT_COIN_TYPE] = boost::assign::list_of(0x80)(0x00)(0x00)(0x77).convert_to_container<std::vector<unsigned char> >();
 
         convertSeed6(vFixedSeeds, pnSeed6_main, ARRAYLEN(pnSeed6_main));
@@ -245,12 +247,11 @@ std::string CChainParams::GetTreasuryRewardAddressAtHeight(int nHeight) const {
 }
 
 CScript CChainParams::GetTreasuryRewardScriptAtHeight(int nHeight) const {
-    
     CBitcoinAddress address(GetTreasuryRewardAddressAtHeight(nHeight).c_str());
     assert(address.IsValid());
 
     CScript script = GetScriptForDestination(address.Get());
-    return script; 
+    return script;
 }
 
 static CMainParams mainParams;

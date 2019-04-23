@@ -8,7 +8,6 @@
 
 #if defined(HAVE_CONFIG_H)
 #include "config/beetlecoin-config.h"
-#include "config/pivx-config.h"
 #endif //HAVE_CONFIG_H
 
 // Check that required client information is defined
