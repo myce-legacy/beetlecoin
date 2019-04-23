@@ -94,8 +94,10 @@ public:
     CMasternodeMan();
     CMasternodeMan(CMasternodeMan& other);
 
+    static CValidationState GetInputCheckingTx(const CTxIn& vin, CMutableTransaction&);
+
     /// Add an entry
-    bool Add(CMasternode& mn);
+    bool Add(const CMasternode& mn);
 
     /// Ask (source) node for mnb
     void AskForMN(CNode* pnode, CTxIn& vin);
@@ -109,7 +111,8 @@ public:
     /// Clear Masternode vector
     void Clear();
 
-    int CountEnabled(int protocolVersion = -1);
+    unsigned CountEnabled(unsigned mnlevel = CMasternode::LevelValue::UNSPECIFIED, int protocolVersion = -1);
+    std::map<unsigned, int> CountEnabledByLevels(int protocolVersion = -1);
 
     void CountNetworks(int protocolVersion, int& ipv4, int& ipv6, int& onion);
 
@@ -119,15 +122,16 @@ public:
     CMasternode* Find(const CScript& payee);
     CMasternode* Find(const CTxIn& vin);
     CMasternode* Find(const CPubKey& pubKeyMasternode);
+    CMasternode* Find(const CService& service);
 
     /// Find an entry in the masternode list that is next to be paid
-    CMasternode* GetNextMasternodeInQueueForPayment(int nBlockHeight, bool fFilterSigTime, int& nCount);
+    CMasternode* GetNextMasternodeInQueueForPayment(int nBlockHeight, unsigned mnlevel, bool fFilterSigTime, unsigned& nCount);
 
     /// Find a random entry
-    CMasternode* FindRandomNotInVec(std::vector<CTxIn>& vecToExclude, int protocolVersion = -1);
+    CMasternode* FindRandomNotInVec(unsigned mnlevel, std::vector<CTxIn>& vecToExclude, int protocolVersion = -1);
 
     /// Get the current winner for this block
-    CMasternode* GetCurrentMasterNode(int mod = 1, int64_t nBlockHeight = 0, int minProtocol = 0);
+    CMasternode* GetCurrentMasterNode(unsigned mnlevel, int mod = 1, int64_t nBlockHeight = 0, int minProtocol = 0);
 
     std::vector<CMasternode> GetFullMasternodeVector()
     {
@@ -153,8 +157,6 @@ public:
     std::string ToString() const;
 
     void Remove(CTxIn vin);
-
-    int GetEstimatedMasternodes(int nBlock);
 
     /// Update masternode list and maps using provided CMasternodeBroadcast
     void UpdateMasternodeList(CMasternodeBroadcast mnb);

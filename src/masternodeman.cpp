@@ -399,7 +399,7 @@ int CMasternodeMan::stable_size(unsigned mnlevel)
         if(check_level && mnlevel != mn.Level())
             continue;
 
-        if(IsSporkActive(SPORK_4_MASTERNODE_PAYMENT_ENFORCEMENT)) {
+        if(IsSporkActive(SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT)) {
 
             nMasternode_Age = GetAdjustedTime() - mn.sigTime;
 
@@ -486,7 +486,7 @@ void CMasternodeMan::CountNetworks(int protocolVersion, int& ipv4, int& ipv6, in
     }
 }
 
-void CMasternodeMan::DsegUpdate(CNode* pnode)
+bool CMasternodeMan::DsegUpdate(CNode* pnode)
 {
     LOCK(cs);
 
@@ -496,7 +496,7 @@ void CMasternodeMan::DsegUpdate(CNode* pnode)
             if (it != mWeAskedForMasternodeList.end()) {
                 if (GetTime() < (*it).second) {
                     LogPrint("masternode", "dseg - we already asked peer %i for the list; skipping...\n", pnode->GetId());
-                    return;
+                    return false;
                 }
             }
         }
@@ -505,6 +505,7 @@ void CMasternodeMan::DsegUpdate(CNode* pnode)
     pnode->PushMessage("dseg", CTxIn());
     int64_t askAgain = GetTime() + MASTERNODES_DSEG_SECONDS;
     mWeAskedForMasternodeList[pnode->addr] = askAgain;
+    return true;
 }
 
 CMasternode* CMasternodeMan::Find(const CScript& payee)
@@ -541,6 +542,18 @@ CMasternode* CMasternodeMan::Find(const CPubKey& pubKeyMasternode)
             return &mn;
     }
     return NULL;
+}
+
+CMasternode* CMasternodeMan::Find(const CService& service)
+{
+    LOCK(cs);
+
+    for(auto& mn : vMasternodes) {
+        if (mn.addr == service)
+            return &mn;
+    }
+
+    return nullptr;
 }
 
 //
@@ -725,11 +738,11 @@ int CMasternodeMan::GetMasternodeRank(const CTxIn& vin, int64_t nBlockHeight, in
     sort(vecMasternodeScores.rbegin(), vecMasternodeScores.rend(), CompareScoreTxIn());
 
     int rank = 0;
-    BOOST_FOREACH (PAIRTYPE(int64_t, CTxIn) & s, vecMasternodeScores) {
-        rank++;
-        if (s.second.prevout == vin.prevout) {
+
+    for(auto& s : vecMasternodeScores) {
+        ++rank;
+        if(s.second.prevout == vin.prevout)
             return rank;
-        }
     }
 
     return -1;
@@ -887,7 +900,9 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 
         LogPrint("masternode", "mnp - Masternode ping, vin: %s\n", mnp.vin.prevout.hash.ToString());
 
-        if (mapSeenMasternodePing.count(mnp.GetHash())) return; //seen
+        if (mapSeenMasternodePing.count(mnp.GetHash()))  //seen
+            return;
+
         mapSeenMasternodePing.insert(make_pair(mnp.GetHash(), mnp));
 
         int nDoS = 0;

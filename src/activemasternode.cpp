@@ -268,7 +268,7 @@ bool CActiveMasternode::CreateBroadcast(std::string strService, std::string strK
     if(!CMasternodeBroadcast::CheckDefaultPort(strService, errorMessage, "CActiveMasternode::CreateBroadcast()"))
         return false;
 
-    addrman.Add(CAddress{service}, CNetAddr{"127.0.0.1"}, 2 * 60 * 60);
+    addrman.Add(CAddress(service), CNetAddr("127.0.0.1"), 2 * 60 * 60);
 
     return CreateBroadcast(vin, CService(strService), keyCollateralAddress, pubKeyCollateralAddress, keyMasternode, pubKeyMasternode, errorMessage, mnb);
 }

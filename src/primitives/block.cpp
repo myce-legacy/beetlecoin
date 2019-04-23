@@ -15,7 +15,7 @@
 
 uint256 CBlockHeader::GetHash() const
 {
-	if(nVersion < 4)
+    if(nVersion < 4)
         return XEVAN(BEGIN(nVersion), END(nNonce));
 
     return Hash(BEGIN(nVersion), END(nAccumulatorCheckpoint));
@@ -103,7 +103,7 @@ std::vector<uint256> CBlock::GetMerkleBranch(int nIndex) const
 uint256 CBlock::CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex)
 {
     if (nIndex == -1)
-		return uint256();
+        return uint256();
     for (std::vector<uint256>::const_iterator it(vMerkleBranch.begin()); it != vMerkleBranch.end(); ++it)
     {
         if (nIndex & 1)
