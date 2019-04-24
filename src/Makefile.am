@@ -13,7 +13,7 @@ if EMBEDDED_UNIVALUE
 LIBUNIVALUE = univalue/libunivalue.la
 
 $(LIBUNIVALUE): $(wildcard univalue/lib/*) $(wildcard univalue/include/*)
-    $(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 else
 LIBUNIVALUE = $(UNIVALUE_LIBS)
 endif
@@ -28,8 +28,8 @@ LIBMEMENV  += $(builddir)/leveldb/libmemenv.a
 $(LIBLEVELDB): $(LIBMEMENV)
 
 $(LIBLEVELDB) $(LIBMEMENV):
-    @echo "Building LevelDB ..." && $(MAKE) -C $(@D) $(@F) CXX="$(CXX)" \
-      CC="$(CC)" PLATFORM=$(TARGET_OS) AR="$(AR)" $(LEVELDB_TARGET_FLAGS) \
+	@echo "Building LevelDB ..." && $(MAKE) -C $(@D) $(@F) CXX="$(CXX)" \
+	  CC="$(CC)" PLATFORM=$(TARGET_OS) AR="$(AR)" $(LEVELDB_TARGET_FLAGS) \
           OPT="$(AM_CXXFLAGS) $(PIE_FLAGS) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -D__STDC_LIMIT_MACROS"
 endif
 
@@ -59,7 +59,7 @@ LIBBITCOIN_WALLET=libbitcoin_wallet.a
 endif
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
-    $(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
@@ -201,9 +201,9 @@ BITCOIN_CORE_H = \
   zmq/zmqpublishnotifier.h
 
 obj/build.h: FORCE
-    @$(MKDIR_P) $(builddir)/obj
-    @$(top_srcdir)/share/genbuild.sh "$(abs_top_builddir)/src/obj/build.h" \
-      "$(abs_top_srcdir)"
+	@$(MKDIR_P) $(builddir)/obj
+	@$(top_srcdir)/share/genbuild.sh "$(abs_top_builddir)/src/obj/build.h" \
+	  "$(abs_top_srcdir)"
 libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
 
 # server: shared between beetlecoind and beetlecoin-qt
@@ -531,21 +531,21 @@ CLEANFILES += obj/build.h
 EXTRA_DIST = leveldb
 
 clean-local:
-    -$(MAKE) -C leveldb clean
-    -$(MAKE) -C secp256k1 clean
-    -$(MAKE) -C univalue clean
-    rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
-    -rm -f config.h
+	-$(MAKE) -C leveldb clean
+	-$(MAKE) -C secp256k1 clean
+	-$(MAKE) -C univalue clean
+	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
+	-rm -f config.h
 
 .rc.o:
-    @test -f $(WINDRES)
-    ## FIXME: How to get the appropriate modulename_CPPFLAGS in here?
-    $(AM_V_GEN) $(WINDRES) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) -DWINDRES_PREPROC -i $< -o $@
+	@test -f $(WINDRES)
+	## FIXME: How to get the appropriate modulename_CPPFLAGS in here?
+	$(AM_V_GEN) $(WINDRES) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) -DWINDRES_PREPROC -i $< -o $@
 
 
 %.pb.cc %.pb.h: %.proto
-    @test -f $(PROTOC)
-    $(AM_V_GEN) $(PROTOC) --cpp_out=$(@D) --proto_path=$(<D) $<
+	@test -f $(PROTOC)
+	$(AM_V_GEN) $(PROTOC) --cpp_out=$(@D) --proto_path=$(<D) $<
 
 if ENABLE_TESTS
 include Makefile.test.include

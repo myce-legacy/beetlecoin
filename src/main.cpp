@@ -5462,8 +5462,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         if (pfrom->DisconnectOldProtocol(ActiveProtocol(), strCommand))
             return false;
 
-        if (pfrom->nVersion == 10300)
-            pfrom->nVersion = 300;
+        // Disconnect from outdated peers
+        if (pfrom->nVersion < 70101 && (CBlockIndex::IsSuperMajority(5, chainActive.Tip(), Params().RejectBlockOutdatedMajority()) || Params().NetworkID() != CBaseChainParams::MAIN)) {
+            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+            pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
+                               strprintf("Version must be %d or greater", 70101));
+            pfrom->fDisconnect = true;
+            return false;
+        }
         if (!vRecv.empty())
             vRecv >> addrFrom >> nNonce;
         if (!vRecv.empty()) {

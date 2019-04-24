@@ -3,8 +3,8 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "zbeetlecoincontroldialog.h"
-#include "ui_zbeetlecoincontroldialog.h"
+#include "zbeetcontroldialog.h"
+#include "ui_zbeetcontroldialog.h"
 
 #include "accumulators.h"
 #include "main.h"
@@ -13,12 +13,12 @@
 using namespace std;
 using namespace libzerocoin;
 
-std::list<std::string> ZBeetleCoinControlDialog::listSelectedMints;
-std::list<CZerocoinMint> ZBeetleCoinControlDialog::listMints;
+std::list<std::string> ZBeetControlDialog::listSelectedMints;
+std::list<CZerocoinMint> ZBeetControlDialog::listMints;
 
-ZPivControlDialog::ZPivControlDialog(QWidget *parent) :
+ZBeetControlDialog::ZBeetControlDialog(QWidget *parent) :
     QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),
-    ui(new Ui::ZPivControlDialog),
+    ui(new Ui::ZBeetControlDialog),
     model(0)
 {
     ui->setupUi(this);
@@ -32,19 +32,19 @@ ZPivControlDialog::ZPivControlDialog(QWidget *parent) :
     connect(ui->pushButtonAll, SIGNAL(clicked()), this, SLOT(ButtonAllClicked()));
 }
 
-ZPivControlDialog::~ZPivControlDialog()
+ZBeetControlDialog::~ZBeetControlDialog()
 {
     delete ui;
 }
 
-void ZBeetleCoinControlDialog::setModel(WalletModel *model)
+void ZBeetControlDialog::setModel(WalletModel *model)
 {
     this->model = model;
     updateList();
 }
 
 //Update the tree widget
-void ZBeetleCoinControlDialog::updateList()
+void ZBeetControlDialog::updateList()
 {
     // need to prevent the slot from being called each time something is changed
     ui->treeWidget->blockSignals(true);
@@ -129,7 +129,7 @@ void ZBeetleCoinControlDialog::updateList()
 }
 
 // Update the list when a checkbox is clicked
-void ZBeetleCoinControlDialog::updateSelection(QTreeWidgetItem* item, int column)
+void ZBeetControlDialog::updateSelection(QTreeWidgetItem* item, int column)
 {
     // only want updates from non top level items that are available to spend
     if (item->parent() && column == COLUMN_CHECKBOX && !item->isDisabled()){
@@ -151,7 +151,7 @@ void ZBeetleCoinControlDialog::updateSelection(QTreeWidgetItem* item, int column
 }
 
 // Update the Quantity and Amount display
-void ZBeetleCoinControlDialog::updateLabels()
+void ZBeetControlDialog::updateLabels()
 {
     int64_t nAmount = 0;
     for (const CMintMeta& mint : setMints) {
@@ -160,14 +160,14 @@ void ZBeetleCoinControlDialog::updateLabels()
     }
 
     //update this dialog's labels
-    ui->labelZPiv_int->setText(QString::number(nAmount));
+    ui->labelZBeet_int->setText(QString::number(nAmount));
     ui->labelQuantity_int->setText(QString::number(setSelectedMints.size()));
 
     //update PrivacyDialog labels
-    privacyDialog->setZPivControlLabels(nAmount, setSelectedMints.size());
+    privacyDialog->setZBeetControlLabels(nAmount, setSelectedMints.size());
 }
 
-std::vector<CMintMeta> ZPivControlDialog::GetSelectedMints()
+std::vector<CMintMeta> ZBeetControlDialog::GetSelectedMints()
 {
     std::vector<CMintMeta> listReturn;
     for (const CMintMeta& mint : setMints) {
@@ -179,7 +179,7 @@ std::vector<CMintMeta> ZPivControlDialog::GetSelectedMints()
 }
 
 // select or deselect all of the mints
-void ZBeetleCoinControlDialog::ButtonAllClicked()
+void ZBeetControlDialog::ButtonAllClicked()
 {
     ui->treeWidget->blockSignals(true);
     Qt::CheckState state = Qt::Checked;

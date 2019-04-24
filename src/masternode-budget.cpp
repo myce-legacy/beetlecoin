@@ -29,7 +29,7 @@ int nSubmittedFinalBudget;
 int GetBudgetPaymentCycleBlocks()
 {
     if (Params().NetworkID() == CBaseChainParams::MAIN) {
-        return 7 * 24 * 60 * 60 / Params().TargetSpacing(); // number of blocks in 7 days
+        return 30 * 24 * 60 * 60 / Params().TargetSpacing(); // number of blocks in 30 days
     } else {
         return 24 * 6 * 60 / Params().TargetSpacing(); // ten times per day
     }
@@ -918,7 +918,7 @@ CAmount CBudgetManager::GetTotalBudget(int nHeight)
     CAmount nSubsidy = 0;
     int endHeight = nHeight + GetBudgetPaymentCycleBlocks();
     for (int height = nHeight; height < endHeight; height++) {
-        nSubsidy += GetBlockValue(height, height > Params().LAST_POW_BLOCK());
+        nSubsidy += GetBlockValue(height);
     }
 
     return nSubsidy / 10; // 10% of block reward

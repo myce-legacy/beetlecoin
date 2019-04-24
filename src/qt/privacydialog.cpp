@@ -14,7 +14,7 @@
 #include "sendcoinsentry.h"
 #include "walletmodel.h"
 #include "coincontrol.h"
-#include "zbeetlecoincontroldialog.h"
+#include "zbeetcontroldialog.h"
 #include "spork.h"
 #include "askpassphrasedialog.h"
 
@@ -82,7 +82,7 @@ PrivacyDialog::PrivacyDialog(QWidget* parent) : QDialog(parent, Qt::WindowSystem
     ui->labelZsupplyText1000->setText(tr("Denom. <b>1000</b>:"));
     ui->labelZsupplyText5000->setText(tr("Denom. <b>5000</b>:"));
 
-    // PIVX settings
+    // BeetleCoin settings
     QSettings settings;
     if (!settings.contains("nSecurityLevel")){
         nSecurityLevel = 42;
@@ -150,11 +150,11 @@ void PrivacyDialog::on_addressBookButton_clicked()
     dlg.setModel(walletModel->getAddressTableModel());
     if (dlg.exec()) {
         ui->payTo->setText(dlg.getReturnValue());
-        ui->zPIVpayAmount->setFocus();
+        ui->zBEETpayAmount->setFocus();
     }
 }
 
-void PrivacyDialog::on_pushButtonMintzPIV_clicked()
+void PrivacyDialog::on_pushButtonMintzBEET_clicked()
 {
     if (!walletModel || !walletModel->getOptionsModel())
         return;
@@ -172,7 +172,7 @@ void PrivacyDialog::on_pushButtonMintzPIV_clicked()
     // Request unlock if wallet was locked or unlocked for mixing:
     WalletModel::EncryptionStatus encStatus = walletModel->getEncryptionStatus();
     if (encStatus == walletModel->Locked) {
-        WalletModel::UnlockContext ctx(walletModel->requestUnlock(AskPassphraseDialog::Context::Mint_zPIV, true));
+        WalletModel::UnlockContext ctx(walletModel->requestUnlock(AskPassphraseDialog::Context::Mint_zBEET, true));
         if (!ctx.isValid()) {
             // Unlock wallet was cancelled
             ui->TEMintStatus->setPlainText(tr("Error: Your wallet is locked. Please enter the wallet passphrase first."));
@@ -272,14 +272,14 @@ void PrivacyDialog::on_pushButtonSpendzBEET_clicked()
 
     if(GetAdjustedTime() > GetSporkValue(SPORK_16_ZEROCOIN_MAINTENANCE_MODE)) {
         QMessageBox::information(this, tr("Mint Zerocoin"),
-                                 tr("zPIV is currently undergoing maintenance."), QMessageBox::Ok, QMessageBox::Ok);
+                                 tr("zBEET is currently undergoing maintenance."), QMessageBox::Ok, QMessageBox::Ok);
         return;
     }
 
     // Request unlock if wallet was locked or unlocked for mixing:
     WalletModel::EncryptionStatus encStatus = walletModel->getEncryptionStatus();
     if (encStatus == walletModel->Locked || encStatus == walletModel->UnlockedForAnonymizationOnly) {
-        WalletModel::UnlockContext ctx(walletModel->requestUnlock(AskPassphraseDialog::Context::Send_zPIV, true));
+        WalletModel::UnlockContext ctx(walletModel->requestUnlock(AskPassphraseDialog::Context::Send_zBEET, true));
         if (!ctx.isValid()) {
             // Unlock wallet was cancelled
             return;
@@ -297,9 +297,9 @@ void PrivacyDialog::on_pushButtonZBeetleCoinControl_clicked()
     if (!walletModel || !walletModel->getOptionsModel())
         return;
 
-    ZPivControlDialog* zPivControl = new ZPivControlDialog(this);
-    zPivControl->setModel(walletModel);
-    zPivControl->exec();
+    ZBeetControlDialog* zBeetControl = new ZBeetControlDialog(this);
+    zBeetControl->setModel(walletModel);
+    zBeetControl->exec();
 }
 
 void PrivacyDialog::setZBeetleCoinControlLabels(int64_t nAmount, int nQuantity)
@@ -413,15 +413,15 @@ void PrivacyDialog::sendzBEET()
     // use mints from zBEET selector if applicable
     vector<CMintMeta> vMintsToFetch;
     vector<CZerocoinMint> vMintsSelected;
-    if (!ZPivControlDialog::setSelectedMints.empty()) {
-        vMintsToFetch = ZPivControlDialog::GetSelectedMints();
+    if (!ZBeetControlDialog::setSelectedMints.empty()) {
+        vMintsToFetch = ZBeetControlDialog::GetSelectedMints();
 
         for (auto& meta : vMintsToFetch) {
             if (meta.nVersion < libzerocoin::PrivateCoin::PUBKEY_VERSION) {
                 //version 1 coins have to use full security level to successfully spend.
                 if (nSecurityLevel < 100) {
-                    QMessageBox::warning(this, tr("Spend Zerocoin"), tr("Version 1 zPIV require a security level of 100 to successfully spend."), QMessageBox::Ok, QMessageBox::Ok);
-                    ui->TEMintStatus->setPlainText(tr("Failed to spend zPIV"));
+                    QMessageBox::warning(this, tr("Spend Zerocoin"), tr("Version 1 zBEET require a security level of 100 to successfully spend."), QMessageBox::Ok, QMessageBox::Ok);
+                    ui->TEMintStatus->setPlainText(tr("Failed to spend zBEET"));
                     ui->TEMintStatus->repaint();
                     return;
                 }
@@ -451,9 +451,9 @@ void PrivacyDialog::sendzBEET()
 
     // Display errors during spend
     if (!fSuccess) {
-        if (receipt.GetStatus() == ZPIV_SPEND_V1_SEC_LEVEL) {
-            QMessageBox::warning(this, tr("Spend Zerocoin"), tr("Version 1 zPIV require a security level of 100 to successfully spend."), QMessageBox::Ok, QMessageBox::Ok);
-            ui->TEMintStatus->setPlainText(tr("Failed to spend zPIV"));
+        if (receipt.GetStatus() == ZBEET_SPEND_V1_SEC_LEVEL) {
+            QMessageBox::warning(this, tr("Spend Zerocoin"), tr("Version 1 zBEET require a security level of 100 to successfully spend."), QMessageBox::Ok, QMessageBox::Ok);
+            ui->TEMintStatus->setPlainText(tr("Failed to spend zBEET"));
             ui->TEMintStatus->repaint();
             return;
         }
@@ -477,7 +477,7 @@ void PrivacyDialog::sendzBEET()
     }
 
     if (walletModel && walletModel->getAddressTableModel()) {
-        // If zPIV was spent successfully update the addressbook with the label
+        // If zBEET was spent successfully update the addressbook with the label
         std::string labelText = ui->addAsLabel->text().toStdString();
         if (!labelText.empty())
             walletModel->updateAddressBookLabels(address.Get(), labelText, "send");
@@ -485,9 +485,9 @@ void PrivacyDialog::sendzBEET()
             walletModel->updateAddressBookLabels(address.Get(), "(no label)", "send");
     }
 
-    // Clear zpiv selector in case it was used
-    ZPivControlDialog::setSelectedMints.clear();
-    ui->labelzPivSelected_int->setText(QString("0"));
+    // Clear zbeet selector in case it was used
+    ZBeetControlDialog::setSelectedMints.clear();
+    ui->labelzBeetSelected_int->setText(QString("0"));
     ui->labelQuantitySelected_int->setText(QString("0"));
 
     // Some statistics for entertainment
@@ -618,7 +618,7 @@ void PrivacyDialog::setBalance(const CAmount& balance, const CAmount& unconfirme
         mapImmature.insert(make_pair(denom, 0));
     }
 
-    std::vector<CMintMeta> vMints = pwalletMain->zpivTracker->GetMints(false);
+    std::vector<CMintMeta> vMints = pwalletMain->zbeetTracker->GetMints(false);
     map<libzerocoin::CoinDenomination, int> mapMaturityHeights = GetMintMaturityHeight();
     for (auto& meta : vMints){
         // All denominations
@@ -699,9 +699,9 @@ void PrivacyDialog::setBalance(const CAmount& balance, const CAmount& unconfirme
         nLockedBalance = walletModel->getLockedBalance();
     }
 
-    ui->labelzAvailableAmount->setText(QString::number(zerocoinBalance/COIN) + QString(" zPIV "));
-    ui->labelzAvailableAmount_2->setText(QString::number(matureZerocoinBalance/COIN) + QString(" zPIV "));
-    ui->labelzPIVAmountValue->setText(BitcoinUnits::floorHtmlWithUnit(nDisplayUnit, balance - immatureBalance - nLockedBalance, false, BitcoinUnits::separatorAlways));
+    ui->labelzAvailableAmount->setText(QString::number(zerocoinBalance/COIN) + QString(" zBEET "));
+    ui->labelzAvailableAmount_2->setText(QString::number(matureZerocoinBalance/COIN) + QString(" zBEET "));
+    ui->labelzBEETAmountValue->setText(BitcoinUnits::floorHtmlWithUnit(nDisplayUnit, balance - immatureBalance - nLockedBalance, false, BitcoinUnits::separatorAlways));
 
     // Display AutoMint status
     updateAutomintStatus();
@@ -710,11 +710,11 @@ void PrivacyDialog::setBalance(const CAmount& balance, const CAmount& unconfirme
     updateSPORK16Status();
 
     // Display global supply
-    ui->labelZsupplyAmount->setText(QString::number(chainActive.Tip()->GetZerocoinSupply()/COIN) + QString(" <b>zPIV </b> "));
+    ui->labelZsupplyAmount->setText(QString::number(chainActive.Tip()->GetZerocoinSupply()/COIN) + QString(" <b>zBEET </b> "));
     for (auto denom : libzerocoin::zerocoinDenomList) {
         int64_t nSupply = chainActive.Tip()->mapZerocoinSupply.at(denom);
         QString strSupply = QString::number(nSupply) + " x " + QString::number(denom) + " = <b>" +
-                            QString::number(nSupply*denom) + " zPIV </b> ";
+                            QString::number(nSupply*denom) + " zBEET </b> ";
         switch (denom) {
             case libzerocoin::CoinDenomination::ZQ_ONE:
                 ui->labelZsupplyAmount1->setText(strSupply);
@@ -791,23 +791,23 @@ void PrivacyDialog::updateAutomintStatus()
 void PrivacyDialog::updateSPORK16Status()
 {
     // Update/enable labels, buttons and tooltips depending on the current SPORK_16 status
-    bool fButtonsEnabled =  ui->pushButtonMintzPIV->isEnabled();
+    bool fButtonsEnabled =  ui->pushButtonMintzBEET->isEnabled();
     bool fMaintenanceMode = GetAdjustedTime() > GetSporkValue(SPORK_16_ZEROCOIN_MAINTENANCE_MODE);
     if (fMaintenanceMode && fButtonsEnabled) {
-        // Mint zPIV
-        ui->pushButtonMintzPIV->setEnabled(false);
-        ui->pushButtonMintzPIV->setToolTip(tr("zPIV is currently disabled due to maintenance."));
+        // Mint zBEET
+        ui->pushButtonMintzBEET->setEnabled(false);
+        ui->pushButtonMintzBEET->setToolTip(tr("zBEET is currently disabled due to maintenance."));
 
-        // Spend zPIV
-        ui->pushButtonSpendzPIV->setEnabled(false);
-        ui->pushButtonSpendzPIV->setToolTip(tr("zPIV is currently disabled due to maintenance."));
+        // Spend zBEET
+        ui->pushButtonSpendzBEET->setEnabled(false);
+        ui->pushButtonSpendzBEET->setToolTip(tr("zBEET is currently disabled due to maintenance."));
     } else if (!fMaintenanceMode && !fButtonsEnabled) {
-        // Mint zPIV
-        ui->pushButtonMintzPIV->setEnabled(true);
-        ui->pushButtonMintzPIV->setToolTip(tr("PrivacyDialog", "Enter an amount of PIV to convert to zPIV", 0));
+        // Mint zBEET
+        ui->pushButtonMintzBEET->setEnabled(true);
+        ui->pushButtonMintzBEET->setToolTip(tr("PrivacyDialog", "Enter an amount of BEET to convert to zBEET", 0));
 
-        // Spend zPIV
-        ui->pushButtonSpendzPIV->setEnabled(true);
-        ui->pushButtonSpendzPIV->setToolTip(tr("Spend Zerocoin. Without 'Pay To:' address creates payments to yourself."));
+        // Spend zBEET
+        ui->pushButtonSpendzBEET->setEnabled(true);
+        ui->pushButtonSpendzBEET->setToolTip(tr("Spend Zerocoin. Without 'Pay To:' address creates payments to yourself."));
     }
 }
