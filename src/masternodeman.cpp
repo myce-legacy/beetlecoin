@@ -842,19 +842,19 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
         CMasternodeBroadcast mnb;
         vRecv >> mnb;
 
-        auto pmn = mnodeman.Find(mnb.addr);
+        // auto pmn = mnodeman.Find(mnb.addr);
 
-        if(pmn && pmn->vin != mnb.vin)
-        {
-            pmn->Check(true);
+        // if (pmn && pmn->vin != mnb.vin)
+        // {
+            // pmn->Check(true);
 
-            if(pmn->IsEnabled())
-            {
-                LogPrintf("mnb - More than one vin used for single IP address\n");
-                Misbehaving(pfrom->GetId(), 100);
-                return;
-            }
-        }
+            // if(pmn->IsEnabled())
+            // {
+                // LogPrintf("mnb - More than one vin used for single IP address\n");
+                // Misbehaving(pfrom->GetId(), 100);
+                // return;
+            // }
+        // }
 
         if (mapSeenMasternodeBroadcast.count(mnb.GetHash())) { //seen
             masternodeSync.AddedMasternodeList(mnb.GetHash());
