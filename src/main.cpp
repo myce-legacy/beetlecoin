@@ -1822,30 +1822,30 @@ int64_t GetBlockValue(int nHeight)
     if (nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) { //Start halving only when we hit the 2nd supply target
 
         halvings = 0;
-    
+
     }
 
     if(IsTreasuryBlock(nHeight)) {
-        
+
         LogPrintf("GetBlockValue(): this is a treasury block\n");
         nSubsidy = GetTreasuryAward(nHeight);
 
-    } else { 
+    } else {
 
         if (nHeight == 0) {
-    	   
+
             nSubsidy = 200000 * COIN;
-        
+
         } else if (nHeight < 9 && nHeight > 0) {
-            
+
             nSubsidy = 20000000 * COIN;
-        
+
         } else if (nHeight < 2501 && nHeight >= 10) {
-    	
+
             nSubsidy = 5 * COIN;
-        
+
         } else if (nHeight >= 2501 && nMoneySupply + nSubsidy < Params().MaxMoneyOutQuarter()) {
-        
+
             nSubsidy = 75 * COIN;
 
         } else if (nMoneySupply + nSubsidy >= Params().MaxMoneyOutQuarter() && nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) {
@@ -1865,18 +1865,18 @@ int64_t GetBlockValue(int nHeight)
 
     }
 
-	if (nMoneySupply + nSubsidy >= Params().MaxMoneyOut()) {
-  		
+    if (nMoneySupply + nSubsidy >= Params().MaxMoneyOut()) {
+
         nSubsidy = Params().MaxMoneyOut() - nMoneySupply;
-    
+
     }
 
-  	if (nMoneySupply >= Params().MaxMoneyOut()) {
-  		
+    if (nMoneySupply >= Params().MaxMoneyOut()) {
+
         nSubsidy = 0;
-    
+
     }
-  	
+
     return nSubsidy;
 
 }
@@ -1884,11 +1884,11 @@ int64_t GetBlockValue(int nHeight)
 int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue)
 {
 
-	int64_t ret = 0;
+    int64_t ret = 0;
 
-	if (nHeight <= 101) {
-		ret = blockValue  * 0;
-	} else if (nHeight <= 315000) {
+    if (nHeight <= 101) {
+        ret = blockValue  * 0;
+    } else if (nHeight <= 315000) {
         switch(mnlevel) {
             case 1: ret = blockValue * 0;
             case 2: ret = blockValue * 0;
@@ -1902,7 +1902,7 @@ int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue)
         }
     }
 
-	return ret;
+    return ret;
 
 }
 
@@ -1919,7 +1919,7 @@ bool IsTreasuryBlock(int nHeight)
 
 int64_t GetTreasuryAward(int nHeight)
 {
-    
+
     int64_t nSubsidy = 75;
     int64_t nMoneySupply = chainActive.Tip()->nMoneySupply;
     int nSubsidyHalvingInterval = 1051200;
@@ -1927,13 +1927,13 @@ int64_t GetTreasuryAward(int nHeight)
     if (nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) { //Start halving only when we hit the 2nd supply target
 
         halvings = 0;
-    
+
     }
 
     if (nMoneySupply + nSubsidy >= Params().MaxMoneyOutQuarter() && nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) {
 
         nSubsidy = 10 * COIN;
-        
+
     } else if (nMoneySupply + nSubsidy >= Params().MaxMoneyOutHalf() && halvings == 0) {
 
         nSubsidy = 5 * COIN;
@@ -1946,35 +1946,35 @@ int64_t GetTreasuryAward(int nHeight)
     }
 
     if (nMoneySupply + nSubsidy >= Params().MaxMoneyOut()) {
-        
+
         nSubsidy = Params().MaxMoneyOut() - nMoneySupply;
-    
+
     }
 
     if (nMoneySupply >= Params().MaxMoneyOut()) {
-        
+
         nSubsidy = 0;
-    
+
     }
 
     if(IsTreasuryBlock(nHeight)) {
-        
+
         if(nHeight == nStartTreasuryBlock) {
-            
+
             return (nSubsidy * 1440 * 0.1) + (nSubsidy * 0.05); //10800 + PoS for the first treasury block
-        
+
         }
-        
+
         else {
-            
+
             return (nSubsidy * 1440 * 0.1) + (nSubsidy * 0.05); //prolly the same and something less for each next block, still add PoS
-        
+
         }
-    
+
     } else {
-        
+
         return 0;
-    
+
     }
 }
 
@@ -4090,8 +4090,8 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     if (pcheckpoint && nHeight < pcheckpoint->nHeight)
         return state.DoS(0, error("%s : forked chain older than last checkpoint (height %d)", __func__, nHeight));
 
-    // Reject block.nVersion=4 blocks when 70% of the network has upgraded:
-    if (block.nVersion < 5 && CBlockIndex::IsSuperMajority(5, pindexPrev, Params().RejectBlockOutdatedMajority())) {
+    // Reject block.nVersion=3 blocks when 70% of the network has upgraded:
+    if (block.nVersion < 4 && CBlockIndex::IsSuperMajority(4, pindexPrev, Params().RejectBlockOutdatedMajority())) {
         return state.Invalid(error("%s : rejected nVersion=%d block", __func__, block.nVersion),
             REJECT_OBSOLETE, "bad-version");
     }
@@ -4137,12 +4137,12 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
 
     // Enforce block.nVersion=2 rule that the coinbase starts with serialized block height
     // if 750 of the last 1,000 blocks are version 2 or greater (51/100 if testnet):
-    if (block.nVersion >= 2 &&
-        CBlockIndex::IsSuperMajority(2, pindexPrev, Params().EnforceBlockUpgradeMajority())) {
+    if (block.nVersion >= 2 /*&& (Params().NetworkID() != CBaseChainParams::MAIN || pindexPrev->nHeight >= 1)*/) {
         CScript expect = CScript() << nHeight;
         if (block.vtx[0].vin[0].scriptSig.size() < expect.size() ||
             !std::equal(expect.begin(), expect.end(), block.vtx[0].vin[0].scriptSig.begin())) {
-            return state.DoS(100, error("%s : block height mismatch in coinbase", __func__), REJECT_INVALID, "bad-cb-height");
+            //return state.DoS(100, error("%s : block height mismatch in coinbase", __func__), REJECT_INVALID, "bad-cb-height");
+            LogPrintf("%s : block height mismatch in coinbase at the height %d\n", __func__, pindexPrev->nHeight);
         }
     }
 
@@ -5463,7 +5463,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return false;
 
         // Disconnect from outdated peers
-        if (pfrom->nVersion < 70101 && (CBlockIndex::IsSuperMajority(5, chainActive.Tip(), Params().RejectBlockOutdatedMajority()) || Params().NetworkID() != CBaseChainParams::MAIN)) {
+        if (pfrom->nVersion < 70101 && (CBlockIndex::IsSuperMajority(4, chainActive.Tip(), Params().RejectBlockOutdatedMajority()) || Params().NetworkID() != CBaseChainParams::MAIN)) {
             LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
             pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
                                strprintf("Version must be %d or greater", 70101));
