@@ -848,7 +848,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
         // {
             // pmn->Check(true);
 
-            // if(pmn->IsEnabled())
+            // if (pmn->IsEnabled())
             // {
                 // LogPrintf("mnb - More than one vin used for single IP address\n");
                 // Misbehaving(pfrom->GetId(), 100);
