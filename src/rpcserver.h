@@ -126,7 +126,7 @@ public:
 };
 
 /**
- * PIVX RPC command dispatcher.
+ * BeetleCoin RPC command dispatcher.
  */
 class CRPCTable
 {
@@ -258,11 +258,11 @@ extern UniValue importzerocoins(const UniValue& params, bool fHelp);
 extern UniValue exportzerocoins(const UniValue& params, bool fHelp);
 extern UniValue reconsiderzerocoins(const UniValue& params, bool fHelp);
 extern UniValue getspentzerocoinamount(const UniValue& params, bool fHelp);
-extern UniValue setzpivseed(const UniValue& params, bool fHelp);
-extern UniValue getzpivseed(const UniValue& params, bool fHelp);
+extern UniValue setzbeetseed(const UniValue& params, bool fHelp);
+extern UniValue getzbeetseed(const UniValue& params, bool fHelp);
 extern UniValue generatemintlist(const UniValue& params, bool fHelp);
-extern UniValue searchdzpiv(const UniValue& params, bool fHelp);
-extern UniValue dzpivstate(const UniValue& params, bool fHelp);
+extern UniValue searchdzbeet(const UniValue& params, bool fHelp);
+extern UniValue dzbeetstate(const UniValue& params, bool fHelp);
 
 extern UniValue getrawtransaction(const UniValue& params, bool fHelp); // in rcprawtransaction.cpp
 extern UniValue listunspent(const UniValue& params, bool fHelp);

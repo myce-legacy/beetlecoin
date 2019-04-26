@@ -2488,7 +2488,7 @@ void ThreadScriptCheck()
     scriptcheckqueue.Thread();
 }
 
-void RecalculateZBEETLECOINMinted()
+void RecalculateZBEETMinted()
 {
     CBlockIndex *pindex = chainActive[Params().Zerocoin_StartHeight()];
     int nHeightEnd = chainActive.Height();
@@ -2515,7 +2515,7 @@ void RecalculateZBEETLECOINMinted()
     }
 }
 
-void RecalculateZBEETLECOINSpent()
+void RecalculateZBEETSpent()
 {
     CBlockIndex* pindex = chainActive[Params().Zerocoin_StartHeight()];
     while (true) {
@@ -2551,7 +2551,7 @@ void RecalculateZBEETLECOINSpent()
     }
 }
 
-bool RecalculateBEETLECOINSupply(int nHeightStart)
+bool RecalculateBEETSupply(int nHeightStart)
 {
     if (nHeightStart > chainActive.Height())
         return false;

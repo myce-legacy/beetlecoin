@@ -122,12 +122,12 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     }
 
     obj.push_back(Pair("moneysupply",ValueFromAmount(chainActive.Tip()->nMoneySupply)));
-    UniValue zpivObj(UniValue::VOBJ);
+    UniValue zbeetObj(UniValue::VOBJ);
     for (auto denom : libzerocoin::zerocoinDenomList) {
-        zpivObj.push_back(Pair(to_string(denom), ValueFromAmount(chainActive.Tip()->mapZerocoinSupply.at(denom) * (denom*COIN))));
+        zbeetObj.push_back(Pair(to_string(denom), ValueFromAmount(chainActive.Tip()->mapZerocoinSupply.at(denom) * (denom*COIN))));
     }
-    zpivObj.push_back(Pair("total", ValueFromAmount(chainActive.Tip()->GetZerocoinSupply())));
-    obj.push_back(Pair("zPIVsupply", zpivObj));
+    zbeetObj.push_back(Pair("total", ValueFromAmount(chainActive.Tip()->GetZerocoinSupply())));
+    obj.push_back(Pair("zBEETsupply", zbeetObj));
 
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
@@ -335,16 +335,16 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "validateaddress \"pivxaddress\"\n"
-            "\nReturn information about the given pivx address.\n"
+            "validateaddress \"beetlecoinaddress\"\n"
+            "\nReturn information about the given beetlecoin address.\n"
 
             "\nArguments:\n"
-            "1. \"pivxaddress\"     (string, required) The pivx address to validate\n"
+            "1. \"beetlecoinaddress\"     (string, required) The beetlecoin address to validate\n"
 
             "\nResult:\n"
             "{\n"
             "  \"isvalid\" : true|false,         (boolean) If the address is valid or not. If not, this is the only property returned.\n"
-            "  \"address\" : \"pivxaddress\", (string) The pivx address validated\n"
+            "  \"address\" : \"beetlecoinaddress\", (string) The beetlecoin address validated\n"
             "  \"ismine\" : true|false,          (boolean) If the address is yours or not\n"
             "  \"isscript\" : true|false,        (boolean) If the key is a script\n"
             "  \"pubkey\" : \"publickeyhex\",    (string) The hex value of the raw public key\n"
@@ -408,7 +408,7 @@ CScript _createmultisig_redeemScript(const UniValue& params)
     for (unsigned int i = 0; i < keys.size(); i++) {
         const std::string& ks = keys[i].get_str();
 #ifdef ENABLE_WALLET
-        // Case 1: PIVX address and we have full public key:
+        // Case 1: BeetleCoin address and we have full public key:
         CBitcoinAddress address(ks);
         if (pwalletMain && address.IsValid()) {
             CKeyID keyID;
@@ -455,9 +455,9 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
 
             "\nArguments:\n"
             "1. nrequired      (numeric, required) The number of required signatures out of the n keys or addresses.\n"
-            "2. \"keys\"       (string, required) A json array of keys which are pivx addresses or hex-encoded public keys\n"
+            "2. \"keys\"       (string, required) A json array of keys which are beetlecoin addresses or hex-encoded public keys\n"
             "     [\n"
-            "       \"key\"    (string) pivx address or hex-encoded public key\n"
+            "       \"key\"    (string) beetlecoin address or hex-encoded public key\n"
             "       ,...\n"
             "     ]\n"
 
@@ -489,11 +489,11 @@ UniValue verifymessage(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error(
-            "verifymessage \"pivxaddress\" \"signature\" \"message\"\n"
+            "verifymessage \"beetlecoinaddress\" \"signature\" \"message\"\n"
             "\nVerify a signed message\n"
 
             "\nArguments:\n"
-            "1. \"pivxaddress\"  (string, required) The pivx address to use for the signature.\n"
+            "1. \"beetlecoinaddress\"  (string, required) The beetlecoin address to use for the signature.\n"
             "2. \"signature\"       (string, required) The signature provided by the signer in base 64 encoding (see signmessage).\n"
             "3. \"message\"         (string, required) The message that was signed.\n"
 
