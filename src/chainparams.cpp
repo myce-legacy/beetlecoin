@@ -127,7 +127,7 @@ public:
         nToCheckBlockUpgradeMajority = 10800; // Approximate expected amount of blocks in 7 days (1440*7.5)
         nMinerThreads = 0;
         nTargetTimespan = 40 * 60; // BeetleCoin: 40 minutes
-        nTargetSpacing = 1 * 60;  // BeetleCoin: 1 minute
+        nTargetSpacing = 1 * 60; // BeetleCoin: 1 minute
         nMaturity = 15;
         nMasternodeCountDrift = 20;
         nMaxMoneyOut = 500000000 * COIN;
@@ -266,7 +266,7 @@ public:
         nToCheckBlockUpgradeMajority = 5760; // 4 days
         nMinerThreads = 0;
         nTargetTimespan = 10 * 60; // BeetleCoin: 10 minutes
-        nTargetSpacing = 1 * 60;  // BeetleCoin: 1 minute
+        nTargetSpacing = 1 * 60; // BeetleCoin: 1 minute
         nLastPOWBlock = 200;
         nMaturity = 15;
         nMasternodeCountDrift = 4;
@@ -289,7 +289,8 @@ public:
         genesis.nNonce = 79855;
 
         hashGenesisBlock = genesis.GetHash();
-        assert(hashGenesisBlock == uint256("0x000007cff63ef602a51bf074e384b3516f0dd202f14d52f7c8c9b1af9423ab2e"));
+        assert(hashGenesisBlock == uint256("0xc26eb3f91ed71e314384e46bbb22dc58177a27cfea46def2d845dd5422cab4a1"));
+        assert(genesis.hashMerkleRoot == uint256("0x64a35990d03a0a06b73a4ec8524ec98f315f5a0ce6b0682743374789c5da6557"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -351,7 +352,7 @@ public:
         nToCheckBlockUpgradeMajority = 1000;
         nMinerThreads = 1;
         nTargetTimespan = 10 * 60; // BeetleCoin: 10 minutes
-        nTargetSpacing = 1 * 60;        // BeetleCoin: 1 minutes
+        nTargetSpacing = 1 * 60; // BeetleCoin: 1 minutes
         bnProofOfWorkLimit = ~uint256(0) >> 1;
         genesis.nTime = 1515524400;
         genesis.nBits = 0x1e0ffff0;
@@ -359,7 +360,8 @@ public:
 
         hashGenesisBlock = genesis.GetHash();
         nDefaultPort = 51436;
-        assert(hashGenesisBlock == uint256("0x000008415bdca132b70cf161ecc548e5d0150fd6634a381ee2e99bb8bb77dbb3"));
+        assert(hashGenesisBlock == uint256("0x2949492cb176f49ef3bf86a3a86f0f7755f974e383b1b2c649452aaf48e8a295"));
+        assert(genesis.hashMerkleRoot == uint256("0x64a35990d03a0a06b73a4ec8524ec98f315f5a0ce6b0682743374789c5da6557"));
 
         vFixedSeeds.clear(); //! Testnet mode doesn't have any fixed seeds.
         vSeeds.clear();      //! Testnet mode doesn't have any DNS seeds.
