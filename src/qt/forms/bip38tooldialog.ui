@@ -61,7 +61,7 @@
          <item>
           <widget class="QValidatedLineEdit" name="addressIn_ENC">
            <property name="toolTip">
-            <string>The PIVX address to encrypt</string>
+            <string>The BeetleCoin address to encrypt</string>
            </property>
           </widget>
          </item>
@@ -182,7 +182,7 @@
          <item>
           <widget class="QPushButton" name="encryptKeyButton_ENC">
            <property name="toolTip">
-            <string>Encrypt the private key for this PIVX address</string>
+            <string>Encrypt the private key for this BeetleCoin address</string>
            </property>
            <property name="text">
             <string>Encrypt &amp;Key</string>
@@ -311,7 +311,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../pivx.qrc">
+            <iconset resource="../beetlecoin.qrc">
              <normaloff>:/icons/editpaste</normaloff>:/icons/editpaste</iconset>
            </property>
            <property name="shortcut">
