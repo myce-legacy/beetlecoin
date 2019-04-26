@@ -110,12 +110,12 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet, 
 
     // Make sure to create the correct block version after zerocoin is enabled
     bool fZerocoinActive = chainActive.Height() + 1 >= Params().Zerocoin_StartHeight();
-    if (fZerocoinActive)
-        pblock->nVersion = Params().Zerocoin_HeaderVersion();
-    else if (CBlockIndex::IsSuperMajority(4, chainActive.Tip(), Params().RejectBlockOutdatedMajority()) || Params().NetworkID() != CBaseChainParams::MAIN)
-        pblock->nVersion = CBlock::CURRENT_VERSION;
-    else
+    if (!fZerocoinActive)
+        pblock->nVersion = Params().Zerocoin_HeaderVersion()-1;
+    else if (!CBlockIndex::IsSuperMajority(4, chainActive.Tip(), Params().RejectBlockOutdatedMajority()) && Params().NetworkID() == CBaseChainParams::MAIN)
         pblock->nVersion = 4;
+    else
+        pblock->nVersion = std::max(Params().Zerocoin_HeaderVersion(), CBlock::CURRENT_VERSION);
 
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
