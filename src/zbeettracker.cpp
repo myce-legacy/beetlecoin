@@ -133,7 +133,7 @@ CAmount CzBEETTracker::GetBalance(bool fConfirmedOnly, bool fUnconfirmedOnly) co
     }
 
     {
-        //LOCK(cs_pivtracker);
+        //LOCK(cs_beettracker);
         // Get Unused coins
         for (auto& it : mapSerialHashes) {
             CMintMeta meta = it.second;
