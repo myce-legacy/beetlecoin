@@ -185,7 +185,7 @@ int nQueuedValidatedHeaders = 0;
 int nPreferredDownload = 0;
 
 /** Treasury variables. */
-int nStartTreasuryBlock = 315000; // will be changed
+int nStartTreasuryBlock = 400000; // will be changed
 int nTreasuryBlockStep = 1440;
 
 /** Dirty block index entries. */
@@ -1928,75 +1928,49 @@ int64_t GetBlockValue(int nHeight)
     int nSubsidyHalvingInterval = 1051200;
     int halvings = nHeight / nSubsidyHalvingInterval;
     if (nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) { //Start halving only when we hit the 2nd supply target
-
         halvings = 0;
-
     }
 
-    if(IsTreasuryBlock(nHeight)) {
-
+    if (IsTreasuryBlock(nHeight)) {
         LogPrintf("GetBlockValue(): this is a treasury block\n");
         nSubsidy = GetTreasuryAward(nHeight);
-
     } else {
-
         if (nHeight == 0) {
-
             nSubsidy = 200000 * COIN;
-
         } else if (nHeight < 9 && nHeight > 0) {
-
             nSubsidy = 20000000 * COIN;
-
         } else if (nHeight < 2501 && nHeight >= 10) {
-
             nSubsidy = 5 * COIN;
-
         } else if (nHeight >= 2501 && nMoneySupply + nSubsidy < Params().MaxMoneyOutQuarter()) {
-
             nSubsidy = 75 * COIN;
-
         } else if (nMoneySupply + nSubsidy >= Params().MaxMoneyOutQuarter() && nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) {
-
             nSubsidy = 10 * COIN;
-
         } else if (nMoneySupply + nSubsidy >= Params().MaxMoneyOutHalf() && halvings == 0) {
-
             nSubsidy = 5 * COIN;
-
         } else if (halvings > 0 && halvings <= 64 && nMoneySupply + nSubsidy >= Params().MaxMoneyOutHalf()) {
-
             nSubsidy = 5 * COIN;
             nSubsidy >>= halvings;
-
         }
-
     }
 
     if (nMoneySupply + nSubsidy >= Params().MaxMoneyOut()) {
-
         nSubsidy = Params().MaxMoneyOut() - nMoneySupply;
-
     }
 
     if (nMoneySupply >= Params().MaxMoneyOut()) {
-
         nSubsidy = 0;
-
     }
 
     return nSubsidy;
-
 }
 
 int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue)
 {
-
     int64_t ret = 0;
 
     if (nHeight <= 101) {
         ret = blockValue  * 0;
-    } else if (nHeight <= 315000) {
+    } else if (nHeight <= 400000) { // (block.nTime > GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT))
         switch(mnlevel) {
             case 1: ret = blockValue * 0;
             case 2: ret = blockValue * 0;
@@ -2011,14 +1985,13 @@ int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue)
     }
 
     return ret;
-
 }
 
 bool IsTreasuryBlock(int nHeight)
 {
-    if(nHeight < nStartTreasuryBlock) {
+    if (nHeight < nStartTreasuryBlock) {
         return false;
-    } else if( (nHeight-nStartTreasuryBlock) % nTreasuryBlockStep == 0) {
+    } else if((nHeight-nStartTreasuryBlock) % nTreasuryBlockStep == 0) {
         return true;
     } else {
         return false;
@@ -2027,62 +2000,39 @@ bool IsTreasuryBlock(int nHeight)
 
 int64_t GetTreasuryAward(int nHeight)
 {
-
     int64_t nSubsidy = 75;
     int64_t nMoneySupply = chainActive.Tip()->nMoneySupply;
     int nSubsidyHalvingInterval = 1051200;
     int halvings = nHeight / nSubsidyHalvingInterval;
     if (nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) { //Start halving only when we hit the 2nd supply target
-
         halvings = 0;
-
     }
 
     if (nMoneySupply + nSubsidy >= Params().MaxMoneyOutQuarter() && nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) {
-
         nSubsidy = 10 * COIN;
-
     } else if (nMoneySupply + nSubsidy >= Params().MaxMoneyOutHalf() && halvings == 0) {
-
         nSubsidy = 5 * COIN;
-
     } else if (halvings > 0 && halvings <= 64 && nMoneySupply + nSubsidy >= Params().MaxMoneyOutHalf()) {
-
         nSubsidy = 5 * COIN;
         nSubsidy >>= halvings;
-
     }
 
     if (nMoneySupply + nSubsidy >= Params().MaxMoneyOut()) {
-
         nSubsidy = Params().MaxMoneyOut() - nMoneySupply;
-
     }
 
     if (nMoneySupply >= Params().MaxMoneyOut()) {
-
         nSubsidy = 0;
-
     }
 
-    if(IsTreasuryBlock(nHeight)) {
-
+    if (IsTreasuryBlock(nHeight)) {
         if(nHeight == nStartTreasuryBlock) {
-
             return (nSubsidy * 1440 * 0.1) + (nSubsidy * 0.05); //10800 + PoS for the first treasury block
-
-        }
-
-        else {
-
+        } else {
             return (nSubsidy * 1440 * 0.1) + (nSubsidy * 0.05); //prolly the same and something less for each next block, still add PoS
-
         }
-
     } else {
-
         return 0;
-
     }
 }
 
