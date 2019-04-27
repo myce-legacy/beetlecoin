@@ -50,7 +50,7 @@ public:
     const std::vector<unsigned char>& AlertKey() const { return vAlertPubKey; }
     int GetDefaultPort() const { return nDefaultPort; }
     const uint256& ProofOfWorkLimit() const { return bnProofOfWorkLimit; }
-    int SubsidyHalvingInterval() const { return nSubsidyHalvingInterval; }
+    //int SubsidyHalvingInterval() const { return nSubsidyHalvingInterval; }
     /** Used to check majorities for block version upgrade */
     int EnforceBlockUpgradeMajority() const { return nEnforceBlockUpgradeMajority; }
     int RejectBlockOutdatedMajority() const { return nRejectBlockOutdatedMajority; }
@@ -77,8 +77,8 @@ public:
     int64_t Interval() const { return nTargetTimespan / nTargetSpacing; }
     int COINBASE_MATURITY() const { return nMaturity; }
     CAmount MaxMoneyOut() const { return nMaxMoneyOut; }
-    CAmount MaxMoneyOutQuarter() const { return nMaxMoneyOutQuarter; }
-    CAmount MaxMoneyOutHalf() const { return nMaxMoneyOutHalf; }
+    CAmount FirstSupplyReduction() const { return nFirstSupplyReduction; }
+    CAmount SecondSupplyReduction() const { return nSecondSupplyReduction; }
     /** The masternode count that we will allow the see-saw reward payments to be off by */
     int MasternodeCountDrift() const { return nMasternodeCountDrift; }
     /** Make miner stop after a block is found. In RPC, don't return until nGenProcLimit blocks are generated */
@@ -129,7 +129,12 @@ public:
     //int Zerocoin_StartTime() const { return nZerocoinStartTime; }
     int Block_Enforce_Invalid() const { return nBlockEnforceInvalidUTXO; }
     int Zerocoin_Block_V2_Start() const { return nBlockZerocoinV2; }
-    CAmount InvalidAmountFiltered() const { return nInvalidAmountFiltered; };
+    CAmount InvalidAmountFiltered() const { return nInvalidAmountFiltered; }
+    int NewMNTiersHeight() const { return nMasternodeTiersStartHeight; }
+
+    /** Treasury variables **/
+    int TreasuryStartBlock() const { return nStartTreasuryBlock; }
+    int TreasuryBlockStep() const { return nTreasuryBlockStep; }
 
 protected:
     CChainParams() {}
@@ -141,7 +146,7 @@ protected:
     int nDefaultPort;
     uint256 bnProofOfWorkLimit;
     int nMaxReorganizationDepth;
-    int nSubsidyHalvingInterval;
+    //int nSubsidyHalvingInterval;
     int nEnforceBlockUpgradeMajority;
     int nRejectBlockOutdatedMajority;
     int nToCheckBlockUpgradeMajority;
@@ -152,8 +157,8 @@ protected:
     int nMaturity;
     int nModifierUpdateBlock;
     CAmount nMaxMoneyOut;
-    CAmount nMaxMoneyOutQuarter;
-    CAmount nMaxMoneyOutHalf;
+    CAmount nFirstSupplyReduction;
+    CAmount nSecondSupplyReduction;
     int nMinerThreads;
     std::vector<CDNSSeedData> vSeeds;
     std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
@@ -195,6 +200,10 @@ protected:
     int nBlockLastGoodCheckpoint;
     int nBlockEnforceInvalidUTXO;
     int nBlockZerocoinV2;
+    int nMasternodeTiersStartHeight;
+
+    int nStartTreasuryBlock;
+    int nTreasuryBlockStep;
 };
 
 /**
@@ -207,7 +216,7 @@ class CModifiableParams
 {
 public:
     //! Published setters to allow changing values in unit test cases
-    virtual void setSubsidyHalvingInterval(int anSubsidyHalvingInterval) = 0;
+    //virtual void setSubsidyHalvingInterval(int anSubsidyHalvingInterval) = 0;
     virtual void setEnforceBlockUpgradeMajority(int anEnforceBlockUpgradeMajority) = 0;
     virtual void setRejectBlockOutdatedMajority(int anRejectBlockOutdatedMajority) = 0;
     virtual void setToCheckBlockUpgradeMajority(int anToCheckBlockUpgradeMajority) = 0;

@@ -108,7 +108,6 @@ public:
     {
         networkID = CBaseChainParams::MAIN;
         strNetworkID = "main";
-        vTreasuryRewardAddress="DTX8oihXAa2d3pqdCHVu2obvq6JePAjWHG";
         /**
          * The message start string is designed to be unlikely to occur in normal data.
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -118,10 +117,10 @@ public:
         pchMessageStart[1] = 0x48;
         pchMessageStart[2] = 0x09;
         pchMessageStart[3] = 0x18;
-        vAlertPubKey = ParseHex("048f93954327e5d350971d7ef82431ffae98147a91139a54da5af57cb3942368c5d4a39a141ba44326eea9b0fd4e81c4716126b9462407d88c6b21ea0ab5808ebf");
+        vAlertPubKey = ParseHex("04DE3E3D0380A7359563B990F7AF701320F44CEB0FBC325CD7EB06A6C228FE57D8448AD2365E7F36B31591B9B3BFCE6A5FE9A01773215604CB9DD512470AFBB9BB");
         nDefaultPort = 3133;
         bnProofOfWorkLimit = ~uint256(0) >> 20;
-        nSubsidyHalvingInterval = 2100000;
+        //nSubsidyHalvingInterval = 2100000;
         nMaxReorganizationDepth = 100;
         nEnforceBlockUpgradeMajority = 7560; // 70%
         nRejectBlockOutdatedMajority = 7560; // 70%
@@ -131,9 +130,9 @@ public:
         nTargetSpacing = 1 * 60; // BeetleCoin: 1 minute
         nMaturity = 15;
         nMasternodeCountDrift = 20;
+        nFirstSupplyReduction = 400000000 * COIN;
+        nSecondSupplyReduction = 450000000 * COIN;
         nMaxMoneyOut = 500000000 * COIN;
-        nMaxMoneyOutQuarter = 250000000 * COIN;
-        nMaxMoneyOutHalf = 449728000 * COIN;
 
         /** Height or Time Based Activations **/
         nLastPOWBlock = 200;
@@ -149,6 +148,10 @@ public:
         nBlockZerocoinV2 = nModifierUpdateBlock; //!> The block that zerocoin v2 becomes active - roughly Tuesday, May 8, 2018 4:00:00 AM GMT
         nEnforceNewSporkKey = 1525158000; //!> Sporks signed after (GMT): Tuesday, May 1, 2018 7:00:00 AM GMT must use the new spork key
         nRejectOldSporkKey = 1527811200; //!> Fully reject old spork key after (GMT): Friday, June 1, 2018 12:00:00 AM
+        vTreasuryRewardAddress="XRA5ZEPxM4KK1V9FHXJGFUJjy5ABcVAdpm";
+        nStartTreasuryBlock = 315000;
+        nTreasuryBlockStep = 1 * 24 * 60 * 60 / nTargetSpacing; // Once per day
+        nMasternodeTiersStartHeight = nStartTreasuryBlock;
 
         /**
          * Build the genesis block. Note that the output of the genesis coinbase cannot
@@ -260,7 +263,7 @@ public:
         pchMessageStart[1] = 0x76;
         pchMessageStart[2] = 0x65;
         pchMessageStart[3] = 0xba;
-        vAlertPubKey = ParseHex("042292b1f401860eea99e1a8a103effbd7e1c013a59a1a3a0c91c9d1997a0bc6f338567278c11344802838c107055bf7c1641eaed61e879245c255a4f5be5746fc");
+        vAlertPubKey = ParseHex("03c6a3b3881692505afeab25b0fa3e52e0f13109f51f94abd58fdd022d96a23f1f");
         nDefaultPort = 51434;
         nEnforceBlockUpgradeMajority = 4032; // 70%
         nRejectBlockOutdatedMajority = 4032; // 70%
@@ -272,9 +275,13 @@ public:
         nMaturity = 15;
         nMasternodeCountDrift = 4;
         nModifierUpdateBlock = -1; //approx Mon, 17 Apr 2017 04:00:00 GMT
+        nFirstSupplyReduction = 400000000 * COIN;
+        nSecondSupplyReduction = 450000000 * COIN;
         nMaxMoneyOut = 500000000 * COIN;
-        nMaxMoneyOutQuarter = 250000000 * COIN;
-        nMaxMoneyOutHalf = 449728000 * COIN;
+        vTreasuryRewardAddress="yEz2MNkNQnBBNVzYiJJpNawMhH3yn7NY5p";
+        nStartTreasuryBlock = 10;
+        nTreasuryBlockStep = 20; //24 * 6 * 60 / nTargetSpacing; // Ten times per day
+        nMasternodeTiersStartHeight = -1;
         nZerocoinStartHeight = 50;
         //nZerocoinStartTime = 1524711188;
         nBlockEnforceSerialRange = -1; //Enforce serial range starting this block
@@ -321,8 +328,8 @@ public:
         fTestnetToBeDeprecatedFieldRPC = true;
 
         nPoolMaxTransactions = 2;
-        strSporkKey = "04188441e39d99aa69068ee07d26980f459b84465bbd765c6ee15d1aec5b76b5aebb01b24be184a1d3a12af61276549d96cc9499d909f8afc183132837d18d643d";
-        strObfuscationPoolDummyAddress = "xp87cG8UEQgzs1Bk67Yk884C7pnQfAeo7q";
+        strSporkKey = "03c6a3b3881692505afeab25b0fa3e52e0f13109f51f94abd58fdd022d96a23f1f";
+        strObfuscationPoolDummyAddress = "yBToNUFGJUSHKxiZkUMZc3dYrYbvWXgLEp";
         nStartMasternodePayments = 1420837558; //Fri, 09 Jan 2015 21:05:58 GMT
         nBudget_Fee_Confirmations = 3; // Number of confirmations for the finalization fee. We have to make this very short
                                        // here because we only have a 8 block finalization window on testnet
@@ -349,7 +356,7 @@ public:
         pchMessageStart[1] = 0xcf;
         pchMessageStart[2] = 0x7e;
         pchMessageStart[3] = 0xac;
-        nSubsidyHalvingInterval = 150;
+        //nSubsidyHalvingInterval = 150;
         nEnforceBlockUpgradeMajority = 750;
         nRejectBlockOutdatedMajority = 950;
         nToCheckBlockUpgradeMajority = 1000;
@@ -410,7 +417,7 @@ public:
     }
 
     //! Published setters to allow changing values in unit test cases
-    virtual void setSubsidyHalvingInterval(int anSubsidyHalvingInterval) { nSubsidyHalvingInterval = anSubsidyHalvingInterval; }
+    //virtual void setSubsidyHalvingInterval(int anSubsidyHalvingInterval) { nSubsidyHalvingInterval = anSubsidyHalvingInterval; }
     virtual void setEnforceBlockUpgradeMajority(int anEnforceBlockUpgradeMajority) { nEnforceBlockUpgradeMajority = anEnforceBlockUpgradeMajority; }
     virtual void setRejectBlockOutdatedMajority(int anRejectBlockOutdatedMajority) { nRejectBlockOutdatedMajority = anRejectBlockOutdatedMajority; }
     virtual void setToCheckBlockUpgradeMajority(int anToCheckBlockUpgradeMajority) { nToCheckBlockUpgradeMajority = anToCheckBlockUpgradeMajority; }

@@ -104,7 +104,6 @@ map<uint256, set<uint256> > mapOrphanTransactionsByPrev;
 map<uint256, int64_t> mapRejectedBlocks;
 map<uint256, int64_t> mapZerocoinspends; //txid, time received
 
-
 void EraseOrphansFor(NodeId peer);
 
 static void CheckBlockIndex();
@@ -183,10 +182,6 @@ int nQueuedValidatedHeaders = 0;
 
 /** Number of preferable block download peers. */
 int nPreferredDownload = 0;
-
-/** Treasury variables. */
-int nStartTreasuryBlock = 400000; // will be changed
-int nTreasuryBlockStep = 1440;
 
 /** Dirty block index entries. */
 set<CBlockIndex*> setDirtyBlockIndex;
@@ -1328,14 +1323,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState& state, const CTransa
 
     int chainHeight = chainActive.Height();
     if (chainHeight < Params().Zerocoin_StartHeight() && !IsInitialBlockDownload() && tx.ContainsZerocoins())
-        return state.DoS(10, error("AcceptToMemoryPool: : Zerocoin is not yet active"), REJECT_INVALID, "bad-tx");
+        return state.DoS(10, error("AcceptToMemoryPool : Zerocoin is not yet active"), REJECT_INVALID, "bad-tx");
 
     if (!CheckTransaction(tx, chainHeight >= Params().Zerocoin_StartHeight(), true, state))
-        return state.DoS(100, error("AcceptToMemoryPool: : CheckTransaction failed"), REJECT_INVALID, "bad-tx");
+        return state.DoS(100, error("AcceptToMemoryPool : CheckTransaction failed"), REJECT_INVALID, "bad-tx");
 
     // Coinbase is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
-        return state.DoS(100, error("AcceptToMemoryPool: : coinbase as individual tx"),
+        return state.DoS(100, error("AcceptToMemoryPool : coinbase as individual tx"),
             REJECT_INVALID, "coinbase");
 
     // Coinstake is also only valid in a block, not as a loose transaction
@@ -1923,43 +1918,47 @@ double ConvertBitsToDouble(unsigned int nBits)
 
 int64_t GetBlockValue(int nHeight)
 {
-    int64_t nSubsidy = 0;
-    int64_t nMoneySupply = chainActive.Tip()->nMoneySupply;
-    int nSubsidyHalvingInterval = 1051200;
-    int halvings = nHeight / nSubsidyHalvingInterval;
-    if (nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) { //Start halving only when we hit the 2nd supply target
-        halvings = 0;
-    }
-
-    if (IsTreasuryBlock(nHeight)) {
-        LogPrintf("GetBlockValue(): this is a treasury block\n");
-        nSubsidy = GetTreasuryAward(nHeight);
-    } else {
-        if (nHeight == 0) {
-            nSubsidy = 200000 * COIN;
-        } else if (nHeight < 9 && nHeight > 0) {
-            nSubsidy = 20000000 * COIN;
-        } else if (nHeight < 2501 && nHeight >= 10) {
-            nSubsidy = 5 * COIN;
-        } else if (nHeight >= 2501 && nMoneySupply + nSubsidy < Params().MaxMoneyOutQuarter()) {
-            nSubsidy = 75 * COIN;
-        } else if (nMoneySupply + nSubsidy >= Params().MaxMoneyOutQuarter() && nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) {
-            nSubsidy = 10 * COIN;
-        } else if (nMoneySupply + nSubsidy >= Params().MaxMoneyOutHalf() && halvings == 0) {
-            nSubsidy = 5 * COIN;
-        } else if (halvings > 0 && halvings <= 64 && nMoneySupply + nSubsidy >= Params().MaxMoneyOutHalf()) {
-            nSubsidy = 5 * COIN;
-            nSubsidy >>= halvings;
+    nHeight++; // Argument passed is height-1
+    if (nHeight == 0) return 0;
+    //if (Params().NetworkID() != CBaseChainParams::MAIN) return 100 * COIN;
+    if (Params().NetworkID() != CBaseChainParams::MAIN) { // testing
+        if (nHeight <= 100) {
+            return 100 * COIN;
+        } else {
+            if (mapBlockIndex.at(nHeight-1)->nMoneySupply <= 10000)
+                return 1 * COIN;
+            else
+                return 5 * COIN;
         }
     }
 
-    if (nMoneySupply + nSubsidy >= Params().MaxMoneyOut()) {
-        nSubsidy = Params().MaxMoneyOut() - nMoneySupply;
+    int64_t nSubsidy = 0;
+
+    if (nHeight == 1) {
+        nSubsidy = 200000 * COIN;
+    } else if (nHeight > 1 && nHeight <= 9) {
+        nSubsidy = 20000000 * COIN;
+    } else if (nHeight > 9 && nHeight <= 2501) {
+        nSubsidy = 5 * COIN;
+    } else {
+        int64_t nMoneySupply = mapBlockIndex.at(nHeight-1)->nMoneySupply;
+
+        if (nMoneySupply < Params().FirstSupplyReduction()) {
+            nSubsidy = 75;
+            if (nMoneySupply + nSubsidy > Params().FirstSupplyReduction())
+                nSubsidy = 1 + Params().FirstSupplyReduction() - nMoneySupply;
+        } else if (nMoneySupply < Params().SecondSupplyReduction()) {
+            nSubsidy = 10;
+            if (nMoneySupply + nSubsidy > Params().SecondSupplyReduction())
+                nSubsidy = 1 + Params().SecondSupplyReduction() - nMoneySupply;
+        } else {
+            nSubsidy = 5;
+        }
+        nSubsidy *= COIN;
     }
 
-    if (nMoneySupply >= Params().MaxMoneyOut()) {
-        nSubsidy = 0;
-    }
+    if (nHeight-1 >= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)) //Params().TreasuryStartBlock()
+        nSubsidy = nSubsidy * 9 / 10; // remove 10% for treasury (90/100 goes to stakers and MNs)
 
     return nSubsidy;
 }
@@ -1968,9 +1967,10 @@ int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue)
 {
     int64_t ret = 0;
 
-    if (nHeight <= 101) {
-        ret = blockValue  * 0;
-    } else if (nHeight <= 400000) { // (block.nTime > GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT))
+    if (nHeight >= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)) //Params().TreasuryStartBlock()
+        blockValue = blockValue * 10 / 9; // add back treasury percentage to get original block value
+
+    if (nHeight < GetSporkValue(SPORK_18_NEW_MASTERNODE_TIERS_DEFAULT)) { //Params().NewMNTiersHeight()
         switch(mnlevel) {
             case 1: ret = blockValue * 0;
             case 2: ret = blockValue * 0;
@@ -1980,7 +1980,7 @@ int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue)
         switch(mnlevel) {
             case 1: ret = blockValue * 0.04;
             case 2: ret = blockValue * 0.19;
-            case 3: ret = blockValue * 0.65;
+            case 3: ret = blockValue * 0.62;
         }
     }
 
@@ -1989,9 +1989,9 @@ int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue)
 
 bool IsTreasuryBlock(int nHeight)
 {
-    if (nHeight < nStartTreasuryBlock) {
+    if (nHeight <= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)) { //Params().TreasuryStartBlock() the block reward is reduced beginning with TreasuryStartBlock to later be put into a payment
         return false;
-    } else if((nHeight-nStartTreasuryBlock) % nTreasuryBlockStep == 0) {
+    } else if ((nHeight-GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)) % Params().TreasuryBlockStep() == 0) { //Params().TreasuryStartBlock()
         return true;
     } else {
         return false;
@@ -2000,37 +2000,15 @@ bool IsTreasuryBlock(int nHeight)
 
 int64_t GetTreasuryAward(int nHeight)
 {
-    int64_t nSubsidy = 75;
-    int64_t nMoneySupply = chainActive.Tip()->nMoneySupply;
-    int nSubsidyHalvingInterval = 1051200;
-    int halvings = nHeight / nSubsidyHalvingInterval;
-    if (nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) { //Start halving only when we hit the 2nd supply target
-        halvings = 0;
-    }
-
-    if (nMoneySupply + nSubsidy >= Params().MaxMoneyOutQuarter() && nMoneySupply + nSubsidy < Params().MaxMoneyOutHalf()) {
-        nSubsidy = 10 * COIN;
-    } else if (nMoneySupply + nSubsidy >= Params().MaxMoneyOutHalf() && halvings == 0) {
-        nSubsidy = 5 * COIN;
-    } else if (halvings > 0 && halvings <= 64 && nMoneySupply + nSubsidy >= Params().MaxMoneyOutHalf()) {
-        nSubsidy = 5 * COIN;
-        nSubsidy >>= halvings;
-    }
-
-    if (nMoneySupply + nSubsidy >= Params().MaxMoneyOut()) {
-        nSubsidy = Params().MaxMoneyOut() - nMoneySupply;
-    }
-
-    if (nMoneySupply >= Params().MaxMoneyOut()) {
-        nSubsidy = 0;
-    }
-
     if (IsTreasuryBlock(nHeight)) {
-        if(nHeight == nStartTreasuryBlock) {
-            return (nSubsidy * 1440 * 0.1) + (nSubsidy * 0.05); //10800 + PoS for the first treasury block
-        } else {
-            return (nSubsidy * 1440 * 0.1) + (nSubsidy * 0.05); //prolly the same and something less for each next block, still add PoS
+        int64_t blockValue = 0;
+        int startHeight = nHeight - Params().TreasuryBlockStep();
+        
+        for (int i = startHeight; i < nHeight; i++) {
+            blockValue += GetBlockValue(i); // add up coins from previous TreasuryBlockStep blocks
         }
+        blockValue = blockValue * 10 / 9; // add back treasury payment to get original block value
+        return blockValue / 10; // 10% of block value paid to treasury
     } else {
         return 0;
     }
@@ -3021,9 +2999,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs - 1), nTimeConnect * 0.000001);
 
     //PoW phase redistributed fees to miner. PoS stage destroys fees.
-    CAmount nExpectedMint = GetBlockValue(pindex->pprev->nHeight);
+    CAmount nExpectedMint = GetBlockValue(pindex->pprev->nHeight) + GetTreasuryAward(pindex->pprev->nHeight);
     if (block.IsProofOfWork())
         nExpectedMint += nFees;
+	LogPrintf("ConnectBlock(): INFO : Block reward (actual=%s vs limit=%s) maximum: %s\n", FormatMoney(pindex->nMint), FormatMoney(nExpectedMint), FormatMoney(pindex->nMint) == FormatMoney(nExpectedMint));
 
     //Check that the block does not overmint
     if (!IsBlockValueValid(block, nExpectedMint, pindex->nMint)) {
@@ -4340,9 +4319,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     if (block.GetHash() != Params().HashGenesisBlock() && !CheckWork(block, pindexPrev))
         return false;
 
-    bool isPoS = false;
     if (block.IsProofOfStake()) {
-        isPoS = true;
         uint256 hashProofOfStake = 0;
         unique_ptr<CStakeInput> stake;
 
@@ -4363,12 +4340,26 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     if (!AcceptBlockHeader(block, state, &pindex))
         return false;
 
-    if (pindex->nStatus & BLOCK_HAVE_DATA) {
-        // TODO: deal better with duplicate blocks.
-        // return state.DoS(20, error("AcceptBlock() : already have block %d %s", pindex->nHeight, pindex->GetBlockHash().ToString()), REJECT_DUPLICATE, "duplicate");
-        LogPrintf("AcceptBlock() : already have block %d %s", pindex->nHeight, pindex->GetBlockHash().ToString());
-        return true;
-    }
+    // Try to process all requested blocks that we don't have, but only
+    // process an unrequested block if it's new and has enough work to
+    // advance our tip, and isn't too many blocks ahead.
+    bool fAlreadyHave = pindex->nStatus & BLOCK_HAVE_DATA;
+    bool fHasMoreWork = (chainActive.Tip() ? pindex->nChainWork > chainActive.Tip()->nChainWork : true);
+    // Blocks that are too out-of-order needlessly limit the effectiveness of
+    // pruning, because pruning will not delete block files that contain any
+    // blocks which are too close in height to the tip.  Apply this test
+    // regardless of whether pruning is enabled; it should generally be safe to
+    // not process unrequested blocks.
+    bool fTooFarAhead = (pindex->nHeight > int(chainActive.Height() + MIN_BLOCKS_TO_KEEP));
+
+    // TODO: deal better with return value and error conditions for duplicate
+    // and unrequested blocks.
+    if (fAlreadyHave) return true;
+    //if (!fRequested) {  // If we didn't ask for it:
+        if (pindex->nTx != 0) return true;  // This is a previously-processed block that was pruned
+        if (!fHasMoreWork) return true;     // Don't process less-work chains
+        if (fTooFarAhead) return true;      // Block height is too high
+    //}
 
     if ((!fAlreadyCheckedBlock && !CheckBlock(block, state)) || !ContextualCheckBlock(block, state, pindex->pprev)) {
         if (state.IsInvalid() && !state.CorruptionPossible()) {
@@ -4379,189 +4370,6 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     }
 
     int nHeight = pindex->nHeight;
-    int splitHeight = -1;
-
-    if (isPoS) {
-        LOCK(cs_main);
-
-        // Blocks arrives in order, so if prev block is not the tip then we are on a fork.
-        // Extra info: duplicated blocks are skipping this checks, so we don't have to worry about those here.
-        bool isBlockFromFork = pindexPrev != nullptr && chainActive.Tip() != pindexPrev;
-
-        // Coin stake
-        CTransaction &stakeTxIn = block.vtx[1];
-
-        // Inputs
-        std::vector<CTxIn> beetInputs;
-        std::vector<CTxIn> zBEETInputs;
-
-        for (const CTxIn& stakeIn : stakeTxIn.vin) {
-            if (stakeIn.scriptSig.IsZerocoinSpend()) {
-                zBEETInputs.push_back(stakeIn);
-            } else {
-                beetInputs.push_back(stakeIn);
-            }
-        }
-        const bool hasBEETInputs = !beetInputs.empty();
-        const bool hasZBEETInputs = !zBEETInputs.empty();
-
-        // ZC started after PoS.
-        // Check for serial double spent on the same block, TODO: Move this to the proper method..
-
-        vector<CBigNum> inBlockSerials;
-        for (const CTransaction& tx : block.vtx) {
-            for (const CTxIn& in: tx.vin) {
-                if (nHeight >= Params().Zerocoin_StartHeight()) {
-                    if (in.scriptSig.IsZerocoinSpend()) {
-                        CoinSpend spend = TxInToZerocoinSpend(in);
-                        // Check for serials double spending in the same block
-                        if (std::find(inBlockSerials.begin(), inBlockSerials.end(), spend.getCoinSerialNumber()) !=
-                            inBlockSerials.end()) {
-                            return state.DoS(100, error("%s: serial double spent on the same block", __func__));
-                        }
-                        inBlockSerials.push_back(spend.getCoinSerialNumber());
-                    }
-                }
-                if (tx.IsCoinStake())
-                    continue;
-
-                if (hasBEETInputs) {
-                    // Check if coinstake input is double spent inside the same block
-                    for (const CTxIn& beetIn : beetInputs) {
-                        if (beetIn.prevout == in.prevout) {
-                            // double spent coinstake input inside block
-                            return error("%s: double spent coinstake input inside block", __func__);
-                        }
-                    }
-                }
-            }
-        }
-        inBlockSerials.clear();
-
-        // Check whether is a fork or not
-        if (isBlockFromFork) {
-
-            // Start at the block we're adding on to
-            CBlockIndex *prev = pindexPrev;
-
-            int readBlock = 0;
-            vector<CBigNum> vBlockSerials;
-            CBlock bl;
-            // Go backwards on the forked chain up to the split
-            do {
-                // Check if the forked chain is longer than the max reorg limit
-                if (readBlock == Params().MaxReorganizationDepth()) {
-                    // TODO: Remove this chain from disk.
-                    return error("%s: forked chain longer than maximum reorg limit", __func__);
-                }
-
-                if (!ReadBlockFromDisk(bl, prev))
-                    // Previous block not on disk
-                    return error("%s: previous block %s not on disk", __func__, prev->GetBlockHash().GetHex());
-                // Increase amount of read blocks
-                readBlock++;
-                // Loop through every input from said block
-                for (const CTransaction& t : bl.vtx) {
-                    for (const CTxIn& in: t.vin) {
-                        // Loop through every input of the staking tx
-                        for (const CTxIn& stakeIn : beetInputs) {
-                            // if it's already spent
-
-                            // First regular staking check
-                            if (hasBEETInputs) {
-                                if (stakeIn.prevout == in.prevout) {
-                                    return state.DoS(100, error("%s: input already spent on a previous block", __func__));
-                                }
-
-                                // Second, if there is zPoS staking then store the serials for later check
-                                if (in.scriptSig.IsZerocoinSpend()) {
-                                    vBlockSerials.push_back(TxInToZerocoinSpend(in).getCoinSerialNumber());
-                                }
-                            }
-                        }
-                    }
-                }
-
-                prev = prev->pprev;
-
-            } while (!chainActive.Contains(prev));
-
-            // Split height
-            splitHeight = prev->nHeight;
-
-            // Now that this loop if completed. Check if we have zBEET inputs.
-            if (hasZBEETInputs) {
-                for (const CTxIn& zBeetInput : zBEETInputs) {
-                    CoinSpend spend = TxInToZerocoinSpend(zBeetInput);
-
-                    // First check if the serials were not already spent on the forked blocks.
-                    CBigNum coinSerial = spend.getCoinSerialNumber();
-                    for (const CBigNum& serial : vBlockSerials) {
-                        if (serial == coinSerial) {
-                            return state.DoS(100, error("%s: serial double spent on fork", __func__));
-                        }
-                    }
-
-                    // Now check if the serial exists before the chain split.
-                    int nHeightTx = 0;
-                    if (IsSerialInBlockchain(spend.getCoinSerialNumber(), nHeightTx)) {
-                        // if the height is nHeightTx > chainSplit means that the spent occurred after the chain split
-                        if(nHeightTx <= splitHeight)
-                            return state.DoS(100, error("%s: serial double spent on main chain", __func__));
-                    }
-
-                    if (!ContextualCheckZerocoinSpendNoSerialCheck(stakeTxIn, spend, pindex, 0))
-                        return state.DoS(100,error("%s: forked chain ContextualCheckZerocoinSpend failed for tx %s", __func__,
-                                                   stakeTxIn.GetHash().GetHex()), REJECT_INVALID, "bad-txns-invalid-zbeet");
-
-                    // Now only the ZKP left..
-                    // As the spend maturity is 200, the acc value must be accumulated, otherwise it's not ready to be spent
-                    CBigNum bnAccumulatorValue = 0;
-                    if (!zerocoinDB->ReadAccumulatorValue(spend.getAccumulatorChecksum(), bnAccumulatorValue)) {
-                        return state.DoS(100, error("%s: stake zerocoinspend not ready to be spent", __func__));
-                    }
-
-                    Accumulator accumulator(Params().Zerocoin_Params(chainActive.Height() < Params().Zerocoin_Block_V2_Start()),
-                                            spend.getDenomination(), bnAccumulatorValue);
-
-                    //Check that the coinspend is valid
-                    if (!spend.Verify(accumulator))
-                        return state.DoS(100, error("%s: zerocoin spend did not verify", __func__));
-
-                }
-            }
-        }
-
-        // If the stake is not a zPoS then let's check if the inputs were spent on the main chain
-        const CCoinsViewCache coins(pcoinsTip);
-        if (!stakeTxIn.IsZerocoinSpend()) {
-            for (const CTxIn& in: stakeTxIn.vin) {
-                const CCoins* coin = coins.AccessCoins(in.prevout.hash);
-
-                if (!coin && !isBlockFromFork) {
-                    // No coins on the main chain
-                    return error("%s: coin stake inputs not available on main chain, received height %d vs current %d", __func__, nHeight, chainActive.Height());
-                }
-                if (coin && !coin->IsAvailable(in.prevout.n)) {
-                    // If this is not available get the height of the spent and validate it with the forked height
-                    // Check if this occurred before the chain split
-                    if (!(isBlockFromFork && coin->nHeight > splitHeight)) {
-                        // Coins not available
-                        return error("%s: coin stake inputs already spent in main chain", __func__);
-                    }
-                }
-            }
-        } else {
-            if (!isBlockFromFork) {
-                for (const CTxIn& zBeetInput : zBEETInputs) {
-                        CoinSpend spend = TxInToZerocoinSpend(zBeetInput);
-                        if (!ContextualCheckZerocoinSpend(stakeTxIn, spend, pindex, 0))
-                            return state.DoS(100,error("%s: main chain ContextualCheckZerocoinSpend failed for tx %s", __func__,
-                                    stakeTxIn.GetHash().GetHex()), REJECT_INVALID, "bad-txns-invalid-zbeet");
-                }
-            }
-        }
-    }
 
     // Write block to history file
     try {

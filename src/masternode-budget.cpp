@@ -609,7 +609,7 @@ void CBudgetManager::FillTreasuryBlockPayee(CMutableTransaction& txNew, CAmount 
 
     CAmount blockValue = GetBlockValue(pindexPrev->nHeight);
     payee = Params().GetTreasuryRewardScriptAtHeight(pindexPrev->nHeight);
-    CAmount treasurePayment = blockValue - (blockValue * 0.05); //Subtract the stake reward from the Treasury reward
+    CAmount treasurePayment = GetTreasuryAward(pindexPrev->nHeight);
 
 
     if (fProofOfStake) {
@@ -623,24 +623,27 @@ void CBudgetManager::FillTreasuryBlockPayee(CMutableTransaction& txNew, CAmount 
         txNew.vout[i].scriptPubKey = payee;
         txNew.vout[i].nValue = treasurePayment;
 
-        if (txNew.vout.size() == 4) { //here is a situation: if stake was split, subtraction from the last one may give us negative value, so we have split it
+        // if (txNew.vout.size() == 4) { //here is a situation: if stake was split, subtraction from the last one may give us negative value, so we have split it
             //subtract treasury payment from the stake reward
-            txNew.vout[i - 1].nValue -= treasurePayment/2;
-            txNew.vout[i - 2].nValue -= treasurePayment/2;
-        } else {
+            // txNew.vout[i - 1].nValue -= treasurePayment/2;
+            // txNew.vout[i - 2].nValue -= treasurePayment/2;
+        // } else {
             //subtract treasury payment from the stake reward
-            txNew.vout[i - 1].nValue -= treasurePayment;
-        }
+            // txNew.vout[i - 1].nValue -= treasurePayment;
+        // }
     } else {
         txNew.vout.resize(2);
         txNew.vout[1].scriptPubKey = payee;
         txNew.vout[1].nValue = treasurePayment;
-        txNew.vout[0].nValue = blockValue - treasurePayment;
+        //miners get the full amount on these blocks
+        txNew.vout[0].nValue = blockValue; //- treasurePayment;
     }
 
     CTxDestination address1;
     ExtractDestination(payee, address1);
     CBitcoinAddress address2(address1);
+
+    LogPrint("mnbudget","CBudgetManager::FillTreasuryBlockPayee - Treasury payment to %s for %lld\n", address2.ToString(), treasurePayment);
 }
 
 CFinalizedBudget* CBudgetManager::FindFinalizedBudget(uint256 nHash)

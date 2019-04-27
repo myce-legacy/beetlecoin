@@ -226,14 +226,15 @@ std::string BlockToString(CBlockIndex* pBlock)
     TxContent += "</table>";
 
     CAmount Generated;
-    if (pBlock->nHeight == 0)
+    int height = pBlock->nHeight;
+    if (height == 0)
         Generated = OutVolume;
     else
-        Generated = GetBlockValue(pBlock->nHeight - 1);
+        Generated = GetBlockValue(height - 1) + GetTreasuryAward(height - 1);
 
     std::string BlockContentCells[] =
         {
-            _("Height"), itostr(pBlock->nHeight),
+            _("Height"), itostr(height),
             _("Size"), itostr(GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)),
             _("Number of Transactions"), itostr(block.vtx.size()),
             _("Value Out"), ValueToString(OutVolume),
@@ -254,13 +255,13 @@ std::string BlockToString(CBlockIndex* pBlock)
 
     std::string Content;
     Content += "<h2><a class=\"nav\" href=";
-    Content += itostr(pBlock->nHeight - 1);
+    Content += itostr(height - 1);
     Content += ">◄&nbsp;</a>";
     Content += _("Block");
     Content += " ";
-    Content += itostr(pBlock->nHeight);
+    Content += itostr(height);
     Content += "<a class=\"nav\" href=";
-    Content += itostr(pBlock->nHeight + 1);
+    Content += itostr(height + 1);
     Content += ">&nbsp;►</a></h2>";
     Content += BlockContent;
     Content += "</br>";
@@ -438,7 +439,7 @@ BlockExplorer::BlockExplorer(QWidget* parent) : QMainWindow(parent),
     ui->setupUi(this);
 
     this->setStyleSheet(GUIUtil::loadStyleSheet());
-    
+
     connect(ui->pushSearch, SIGNAL(released()), this, SLOT(onSearch()));
     connect(ui->content, SIGNAL(linkActivated(const QString&)), this, SLOT(goTo(const QString&)));
     connect(ui->back, SIGNAL(released()), this, SLOT(back()));
