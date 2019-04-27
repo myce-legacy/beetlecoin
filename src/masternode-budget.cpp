@@ -606,10 +606,11 @@ void CBudgetManager::FillTreasuryBlockPayee(CMutableTransaction& txNew, CAmount 
     if (!pindexPrev) return;
 
     CScript payee;
+    int height = pindexPrev->nHeight + 1;
 
-    CAmount blockValue = GetBlockValue(pindexPrev->nHeight);
-    payee = Params().GetTreasuryRewardScriptAtHeight(pindexPrev->nHeight);
-    CAmount treasurePayment = GetTreasuryAward(pindexPrev->nHeight);
+    CAmount blockValue = GetBlockValue(height);
+    payee = Params().GetTreasuryRewardScriptAtHeight(height);
+    CAmount treasurePayment = GetTreasuryAward(height);
 
 
     if (fProofOfStake) {

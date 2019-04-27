@@ -36,7 +36,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     }
 
     if (pindexLast->nHeight > Params().LAST_POW_BLOCK()) {
-        uint256 bnTargetLimit = (~uint256(0) >> 24);
+        uint256 bnTargetLimit = Params().NetworkID() == CBaseChainParams::MAIN ? ~uint256(0) >> 24 : Params().ProofOfWorkLimit();
 
         int64_t nActualSpacing = 0;
         if (pindexLast->nHeight != 0)

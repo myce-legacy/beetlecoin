@@ -193,6 +193,34 @@ bool IsBlockValueValid(const CBlock& block, CAmount nExpectedValue, CAmount nMin
 
     //LogPrintf("XX69----------> IsBlockValueValid(): nMinted: %d, nExpectedValue: %d\n", FormatMoney(nMinted), FormatMoney(nExpectedValue));
 
+    //check if it's valid treasury block
+    if (IsTreasuryBlock(nHeight)) {
+        const CTransaction& txNew = (block.IsProofOfStake() ? block.vtx[1] : block.vtx[0]);
+        CScript treasuryPayee = Params().GetTreasuryRewardScriptAtHeight(nHeight);
+        CAmount blockValue = GetBlockValue(nHeight);
+        CAmount treasuryAmount = GetTreasuryAward(nHeight);
+
+        bool bFound = false;
+
+        BOOST_FOREACH (CTxOut out, txNew.vout) {
+            if (out.nValue == treasuryAmount && out.scriptPubKey == treasuryPayee) {
+                bFound = true; //We found our treasury payment, let's end it here.
+                break;
+            }
+        }
+
+        if (!bFound) {
+            LogPrint("masternode","Invalid treasury payment detected %s\n", txNew.ToString().c_str());
+            if (nHeight >= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)) { //IsSporkActive(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)
+                return false;
+            } else {
+                LogPrint("masternode","Treasury enforcement is not enabled, accept anyway\n");
+            }
+        } else {
+            LogPrint("masternode","Valid treasury payment detected %s\n", txNew.ToString().c_str());
+        }
+    }
+
     if (!masternodeSync.IsSynced()) { //there is no budget data to use to check anything
         //super blocks will always be on these blocks, max 100 per budgeting
         if (nHeight % GetBudgetPaymentCycleBlocks() < 100) {
@@ -256,35 +284,7 @@ bool IsBlockPayeeValid(const CBlock& block, int nBlockHeight)
     // votes (status = TrxValidationStatus::VoteThreshold) for a finalized budget were found
     // In all cases a masternode will get the payment for this block
 
-    //check if it's valid treasury block
-    if (IsTreasuryBlock(nBlockHeight)) {
-        CScript treasuryPayee = Params().GetTreasuryRewardScriptAtHeight(nBlockHeight);
-        CAmount blockValue = GetBlockValue(nBlockHeight);
-        CAmount treasuryAmount = GetTreasuryAward(nBlockHeight);
-
-        bool bFound = false;
-
-        BOOST_FOREACH (CTxOut out, txNew.vout) {
-            if (out.nValue == treasuryAmount && out.scriptPubKey == treasuryPayee) {
-                bFound = true; //We found our treasury payment, let's end it here.
-                break;
-            }
-        }
-
-        if (!bFound) {
-            LogPrint("masternode","Invalid treasury payment detected %s\n", txNew.ToString().c_str());
-            if (nBlockHeight >= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)) { //IsSporkActive(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)
-                return false;
-            } else {
-                LogPrint("masternode","Treasury enforcement is not enabled, accept anyway\n");
-                return true;
-            }
-        } else {
-            LogPrint("masternode","Valid treasury payment detected %s\n", txNew.ToString().c_str());
-            return true;
-        }
-
-    } else {
+    if (!IsTreasuryBlock(nBlockHeight)) {
         //check for masternode payee
         if (masternodePayments.IsTransactionValid(txNew, nBlockHeight))
             return true;

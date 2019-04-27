@@ -1922,6 +1922,7 @@ int64_t GetBlockValue(int nHeight)
     if (nHeight == 0) return 0;
     //if (Params().NetworkID() != CBaseChainParams::MAIN) return 100 * COIN;
     if (Params().NetworkID() != CBaseChainParams::MAIN) { // testing
+        LogPrintf("GetBlockValue(): INFO : Block reward=%s height=%s SPORK_17 value=%s\n", nSubsidy/COIN, nHeight, GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT));
         if (nHeight <= 100) {
             return 100 * COIN;
         } else {
@@ -3002,7 +3003,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     CAmount nExpectedMint = GetBlockValue(pindex->pprev->nHeight) + GetTreasuryAward(pindex->pprev->nHeight);
     if (block.IsProofOfWork())
         nExpectedMint += nFees;
-	LogPrintf("ConnectBlock(): INFO : Block reward (actual=%s vs limit=%s) maximum: %s\n", FormatMoney(pindex->nMint), FormatMoney(nExpectedMint), FormatMoney(pindex->nMint) == FormatMoney(nExpectedMint));
+    LogPrintf("ConnectBlock(): INFO : Block reward (actual=%s vs limit=%s) maximum: %s\n", FormatMoney(pindex->nMint), FormatMoney(nExpectedMint), FormatMoney(pindex->nMint) == FormatMoney(nExpectedMint));
 
     //Check that the block does not overmint
     if (!IsBlockValueValid(block, nExpectedMint, pindex->nMint)) {
