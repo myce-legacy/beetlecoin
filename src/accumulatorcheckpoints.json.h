@@ -9,7 +9,7 @@
 std::string GetMainCheckpoints() { // Initially set height to zerocoin start height
     std::string strMainCheckpoints = "[\n"
             "  {\n"
-            "    \"height\": 200,\n"
+            "    \"height\": 12000,\n"
             "    \"1\": \"0\",\n"
             "    \"5\": \"0\",\n"
             "    \"10\": \"0\",\n"

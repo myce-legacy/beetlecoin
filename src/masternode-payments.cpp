@@ -197,7 +197,7 @@ bool IsBlockValueValid(const CBlock& block, CAmount nExpectedValue, CAmount nMin
     if (IsTreasuryBlock(nHeight)) {
         const CTransaction& txNew = (block.IsProofOfStake() ? block.vtx[1] : block.vtx[0]);
         CScript treasuryPayee = Params().GetTreasuryRewardScriptAtHeight(nHeight);
-        CAmount blockValue = GetBlockValue(nHeight);
+        //CAmount blockValue = GetBlockValue(nHeight-1);
         CAmount treasuryAmount = GetTreasuryAward(nHeight);
 
         bool bFound = false;

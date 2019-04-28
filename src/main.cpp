@@ -1919,18 +1919,10 @@ double ConvertBitsToDouble(unsigned int nBits)
 int64_t GetBlockValue(int nHeight)
 {
     nHeight++; // Argument passed is height-1
-    if (nHeight == 0) return 0;
-    //if (Params().NetworkID() != CBaseChainParams::MAIN) return 100 * COIN;
-    if (Params().NetworkID() != CBaseChainParams::MAIN) { // testing
-        LogPrintf("GetBlockValue(): INFO : Block reward=%s height=%s SPORK_17 value=%s\n", nSubsidy/COIN, nHeight, GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT));
-        if (nHeight <= 100) {
-            return 100 * COIN;
-        } else {
-            if (mapBlockIndex.at(nHeight-1)->nMoneySupply <= 10000)
-                return 1 * COIN;
-            else
-                return 5 * COIN;
-        }
+    if (nHeight <= 0) return 0;
+    if (Params().NetworkID() != CBaseChainParams::MAIN) {
+        LogPrintf("GetBlockValue(): INFO : Block reward=%s chainActive height=%s chainActive supply\n", nHeight, chainActive.Height(), chainActive.Tip() ? chainActive.Tip()->nMoneySupply : -1);
+        return nHeight-1 >= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT) ? nHeight * COIN * 9 / 10 : nHeight * COIN; //Params().TreasuryStartBlock()
     }
 
     int64_t nSubsidy = 0;
@@ -1942,16 +1934,16 @@ int64_t GetBlockValue(int nHeight)
     } else if (nHeight > 9 && nHeight <= 2501) {
         nSubsidy = 5 * COIN;
     } else {
-        int64_t nMoneySupply = mapBlockIndex.at(nHeight-1)->nMoneySupply;
+        int64_t nMoneySupply = chainActive.Tip()->nMoneySupply; // need a way to check supply at specific height
 
         if (nMoneySupply < Params().FirstSupplyReduction()) {
             nSubsidy = 75;
-            if (nMoneySupply + nSubsidy > Params().FirstSupplyReduction())
-                nSubsidy = 1 + Params().FirstSupplyReduction() - nMoneySupply;
+            // if (nMoneySupply + nSubsidy > Params().FirstSupplyReduction())
+                // nSubsidy = 1 + Params().FirstSupplyReduction() - nMoneySupply;
         } else if (nMoneySupply < Params().SecondSupplyReduction()) {
             nSubsidy = 10;
-            if (nMoneySupply + nSubsidy > Params().SecondSupplyReduction())
-                nSubsidy = 1 + Params().SecondSupplyReduction() - nMoneySupply;
+            // if (nMoneySupply + nSubsidy > Params().SecondSupplyReduction())
+                // nSubsidy = 1 + Params().SecondSupplyReduction() - nMoneySupply;
         } else {
             nSubsidy = 5;
         }
@@ -2002,12 +1994,12 @@ bool IsTreasuryBlock(int nHeight)
 int64_t GetTreasuryAward(int nHeight)
 {
     if (IsTreasuryBlock(nHeight)) {
-        int64_t blockValue = 0;
         int startHeight = nHeight - Params().TreasuryBlockStep();
-        
-        for (int i = startHeight; i < nHeight; i++) {
-            blockValue += GetBlockValue(i); // add up coins from previous TreasuryBlockStep blocks
-        }
+        int64_t blockValue = GetBlockValue(nHeight-1) * Params().TreasuryBlockStep();
+
+        // for (int i = startHeight; i < nHeight; i++) {
+            // blockValue += GetBlockValue(i); // add up coins from previous TreasuryBlockStep blocks
+        // }
         blockValue = blockValue * 10 / 9; // add back treasury payment to get original block value
         return blockValue / 10; // 10% of block value paid to treasury
     } else {
@@ -3000,7 +2992,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs - 1), nTimeConnect * 0.000001);
 
     //PoW phase redistributed fees to miner. PoS stage destroys fees.
-    CAmount nExpectedMint = GetBlockValue(pindex->pprev->nHeight) + GetTreasuryAward(pindex->pprev->nHeight);
+    CAmount nExpectedMint = GetBlockValue(pindex->pprev->nHeight) + GetTreasuryAward(pindex->nHeight);
     if (block.IsProofOfWork())
         nExpectedMint += nFees;
     LogPrintf("ConnectBlock(): INFO : Block reward (actual=%s vs limit=%s) maximum: %s\n", FormatMoney(pindex->nMint), FormatMoney(nExpectedMint), FormatMoney(pindex->nMint) == FormatMoney(nExpectedMint));
