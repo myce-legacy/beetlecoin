@@ -1920,12 +1920,9 @@ int64_t GetBlockValue(int nHeight)
 {
     nHeight++; // one more than chainActive.Height()
     if (nHeight <= 0) return 0;
-    if (Params().NetworkID() != CBaseChainParams::MAIN) {
-        //LogPrintf("GetBlockValue(): INFO : Block reward=%s chainActive height=%s supply=%s chainActive supply=%s\n", nHeight, chainActive.Height(), chainActive[nHeight-1]->nMoneySupply/COIN, chainActive.Tip()->nMoneySupply/COIN);
-        if (chainActive[nHeight-1]->nMoneySupply == 55 * COIN)
-            return 12345 * COIN;
-        return nHeight-1 >= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT) ? nHeight * COIN * 9 / 10 : nHeight * COIN; //Params().TreasuryStartBlock()
-    }
+    if (Params().NetworkID() != CBaseChainParams::MAIN)
+        return nHeight-1 >= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT) ? 90 * COIN : 100 * COIN; //Params().TreasuryStartBlock()
+    //LogPrintf("GetBlockValue(): INFO : Block reward=%s chainActive height=%s supply=%s chainActive supply=%s\n", nHeight, chainActive.Height(), chainActive[nHeight-1]->nMoneySupply/COIN, chainActive.Tip()->nMoneySupply/COIN);
 
     int64_t nSubsidy = 0;
 
