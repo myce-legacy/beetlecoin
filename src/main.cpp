@@ -1921,7 +1921,9 @@ int64_t GetBlockValue(int nHeight)
     nHeight++; // Argument passed is height-1
     if (nHeight <= 0) return 0;
     if (Params().NetworkID() != CBaseChainParams::MAIN) {
-        LogPrintf("GetBlockValue(): INFO : Block reward=%s chainActive height=%s chainActive supply\n", nHeight, chainActive.Height(), chainActive.Tip() ? chainActive.Tip()->nMoneySupply : -1);
+        LogPrintf("GetBlockValue(): INFO : Block reward=%s chainActive height=%s supply=%s chainActive supply=%s\n", nHeight, chainActive.Height(), chainActive[nHeight-2]->nMoneySupply, chainActive.Tip()->nMoneySupply);
+        if (chainActive[nHeight-2]->nMoneySupply == 55)
+            return 12345 * COIN;
         return nHeight-1 >= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT) ? nHeight * COIN * 9 / 10 : nHeight * COIN; //Params().TreasuryStartBlock()
     }
 
@@ -1934,16 +1936,16 @@ int64_t GetBlockValue(int nHeight)
     } else if (nHeight > 9 && nHeight <= 2501) {
         nSubsidy = 5 * COIN;
     } else {
-        int64_t nMoneySupply = chainActive.Tip()->nMoneySupply; // need a way to check supply at specific height
+        int64_t nMoneySupply = chainActive[nHeight-2]->nMoneySupply;
 
         if (nMoneySupply < Params().FirstSupplyReduction()) {
             nSubsidy = 75;
-            // if (nMoneySupply + nSubsidy > Params().FirstSupplyReduction())
-                // nSubsidy = 1 + Params().FirstSupplyReduction() - nMoneySupply;
+            if (nMoneySupply + nSubsidy > Params().FirstSupplyReduction())
+                nSubsidy = 1 + Params().FirstSupplyReduction() - nMoneySupply;
         } else if (nMoneySupply < Params().SecondSupplyReduction()) {
             nSubsidy = 10;
-            // if (nMoneySupply + nSubsidy > Params().SecondSupplyReduction())
-                // nSubsidy = 1 + Params().SecondSupplyReduction() - nMoneySupply;
+            if (nMoneySupply + nSubsidy > Params().SecondSupplyReduction())
+                nSubsidy = 1 + Params().SecondSupplyReduction() - nMoneySupply;
         } else {
             nSubsidy = 5;
         }
@@ -1994,12 +1996,12 @@ bool IsTreasuryBlock(int nHeight)
 int64_t GetTreasuryAward(int nHeight)
 {
     if (IsTreasuryBlock(nHeight)) {
-        int startHeight = nHeight - Params().TreasuryBlockStep();
-        int64_t blockValue = GetBlockValue(nHeight-1) * Params().TreasuryBlockStep();
+        int startHeight = nHeight - Params().TreasuryBlockStep() >= 0 ? nHeight - Params().TreasuryBlockStep() : 0;
+        int64_t blockValue = 0;
 
-        // for (int i = startHeight; i < nHeight; i++) {
-            // blockValue += GetBlockValue(i); // add up coins from previous TreasuryBlockStep blocks
-        // }
+        for (int i = startHeight; i < nHeight; i++) {
+            blockValue += GetBlockValue(i); // add up coins from previous TreasuryBlockStep blocks
+        }
         blockValue = blockValue * 10 / 9; // add back treasury payment to get original block value
         return blockValue / 10; // 10% of block value paid to treasury
     } else {
