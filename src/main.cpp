@@ -1918,11 +1918,11 @@ double ConvertBitsToDouble(unsigned int nBits)
 
 int64_t GetBlockValue(int nHeight)
 {
-    nHeight++; // Argument passed is height-1
+    nHeight++; // one more than chainActive.Height()
     if (nHeight <= 0) return 0;
     if (Params().NetworkID() != CBaseChainParams::MAIN) {
-        LogPrintf("GetBlockValue(): INFO : Block reward=%s chainActive height=%s supply=%s chainActive supply=%s\n", nHeight, chainActive.Height(), chainActive[nHeight-2]->nMoneySupply, chainActive.Tip()->nMoneySupply);
-        if (chainActive[nHeight-2]->nMoneySupply == 55)
+        //LogPrintf("GetBlockValue(): INFO : Block reward=%s chainActive height=%s supply=%s chainActive supply=%s\n", nHeight, chainActive.Height(), chainActive[nHeight-1]->nMoneySupply/COIN, chainActive.Tip()->nMoneySupply/COIN);
+        if (chainActive[nHeight-1]->nMoneySupply == 55 * COIN)
             return 12345 * COIN;
         return nHeight-1 >= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT) ? nHeight * COIN * 9 / 10 : nHeight * COIN; //Params().TreasuryStartBlock()
     }
@@ -1936,20 +1936,19 @@ int64_t GetBlockValue(int nHeight)
     } else if (nHeight > 9 && nHeight <= 2501) {
         nSubsidy = 5 * COIN;
     } else {
-        int64_t nMoneySupply = chainActive[nHeight-2]->nMoneySupply;
+        int64_t nMoneySupply = chainActive[nHeight-1]->nMoneySupply;
 
         if (nMoneySupply < Params().FirstSupplyReduction()) {
-            nSubsidy = 75;
+            nSubsidy = 75 * COIN;
             if (nMoneySupply + nSubsidy > Params().FirstSupplyReduction())
-                nSubsidy = 1 + Params().FirstSupplyReduction() - nMoneySupply;
+                nSubsidy = COIN + Params().FirstSupplyReduction() - nMoneySupply;
         } else if (nMoneySupply < Params().SecondSupplyReduction()) {
-            nSubsidy = 10;
+            nSubsidy = 10 * COIN;
             if (nMoneySupply + nSubsidy > Params().SecondSupplyReduction())
-                nSubsidy = 1 + Params().SecondSupplyReduction() - nMoneySupply;
+                nSubsidy = COIN + Params().SecondSupplyReduction() - nMoneySupply;
         } else {
-            nSubsidy = 5;
+            nSubsidy = 5 * COIN;
         }
-        nSubsidy *= COIN;
     }
 
     if (nHeight-1 >= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)) //Params().TreasuryStartBlock()
