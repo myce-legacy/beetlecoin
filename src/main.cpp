@@ -1933,7 +1933,7 @@ int64_t GetBlockValue(int nHeight)
     } else if (nHeight > 9 && nHeight <= 2501) {
         nSubsidy = 5 * COIN;
     } else {
-        int64_t nMoneySupply = chainActive[nHeight-1] != NULL ? chainActive[nHeight-1]->nMoneySupply : chainActive.Tip()->nMoneySupply;
+        int64_t nMoneySupply = chainActive[nHeight-1] ? chainActive[nHeight-1]->nMoneySupply : chainActive.Tip()->nMoneySupply;
 
         if (nMoneySupply < Params().FirstSupplyReduction()) {
             nSubsidy = 75 * COIN;
@@ -1992,7 +1992,7 @@ bool IsTreasuryBlock(int nHeight)
 int64_t GetTreasuryAward(int nHeight)
 {
     if (IsTreasuryBlock(nHeight)) {
-        int startHeight = nHeight - Params().TreasuryBlockStep() >= 0 ? nHeight - Params().TreasuryBlockStep() : 0;
+        int startHeight = std::max(nHeight - Params().TreasuryBlockStep(), 0);
         int64_t blockValue = 0;
 
         for (int i = startHeight; i < nHeight; i++) {
