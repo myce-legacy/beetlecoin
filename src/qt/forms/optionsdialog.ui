@@ -148,7 +148,7 @@
          <item>
           <widget class="QLabel" name="percentage_label">
            <property name="toolTip">
-            <string>Percentage of incoming BeetleCoin which get automatically converted to zBEET via Zerocoin Protocol (min: 10%)</string>
+            <string>Percentage of incoming BEET which get automatically converted to zBEET via Zerocoin Protocol (min: 10%)</string>
            </property>
            <property name="text">
             <string>Percentage of autominted zBEET</string>
@@ -181,7 +181,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>Wait with automatic conversion to Zerocoin until enough BeetleCoin for this denomination is available</string>
+            <string>Wait with automatic conversion to Zerocoin until enough BEET for this denomination is available</string>
            </property>
            <property name="text">
             <string>Preferred Automint zBEET Denomination</string>
@@ -197,7 +197,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>Wait with automatic conversion to Zerocoin until enough BeetleCoin for this denomination is available</string>
+            <string>Wait with automatic conversion to Zerocoin until enough BEET for this denomination is available</string>
            </property>
            <property name="maxVisibleItems">
             <number>9</number>

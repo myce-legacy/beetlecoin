@@ -292,7 +292,7 @@ void PrivacyDialog::on_pushButtonSpendzBEET_clicked()
     sendzBEET();
 }
 
-void PrivacyDialog::on_pushButtonZBeetleCoinControl_clicked()
+void PrivacyDialog::on_pushButtonZBeetControl_clicked()
 {
     if (!walletModel || !walletModel->getOptionsModel())
         return;
@@ -302,9 +302,9 @@ void PrivacyDialog::on_pushButtonZBeetleCoinControl_clicked()
     zBeetControl->exec();
 }
 
-void PrivacyDialog::setZBeetleCoinControlLabels(int64_t nAmount, int nQuantity)
+void PrivacyDialog::setZBeetControlLabels(int64_t nAmount, int nQuantity)
 {
-    ui->labelzBEETSelected_int->setText(QString::number(nAmount));
+    ui->labelzBeetSelected_int->setText(QString::number(nAmount));
     ui->labelQuantitySelected_int->setText(QString::number(nQuantity));
 }
 

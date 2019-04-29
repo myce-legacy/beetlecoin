@@ -365,7 +365,7 @@ QString TransactionTableModel::formatTxType(const TransactionRecord* wtx) const
         return tr("Spent zBEET");
     case TransactionRecord::RecvFromZerocoinSpend:
         return tr("Received BeetleCoin from zBEET");
-    case TransactionRecord::ZerocoinSpend_Change_zBEET:
+    case TransactionRecord::ZerocoinSpend_Change_zBeet:
         return tr("Minted Change as zBEET from zBEET Spend");
     case TransactionRecord::ZerocoinSpend_FromMe:
         return tr("Converted zBEET to BeetleCoin");

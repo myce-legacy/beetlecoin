@@ -28,9 +28,9 @@ public:
 
     void setModel(WalletModel* model);
 
-    static std::list<std::string> listSelectedMints;
-    static std::list<CZerocoinMint> listMints;
-    static std::vector<CZerocoinMint> GetSelectedMints();
+    static std::set<std::string> setSelectedMints;
+    static std::set<CMintMeta> setMints;
+    static std::vector<CMintMeta> GetSelectedMints();
 
 private:
     Ui::ZBeetControlDialog *ui;

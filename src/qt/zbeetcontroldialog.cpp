@@ -13,8 +13,8 @@
 using namespace std;
 using namespace libzerocoin;
 
-std::list<std::string> ZBeetControlDialog::listSelectedMints;
-std::list<CZerocoinMint> ZBeetControlDialog::listMints;
+std::set<std::string> ZBeetControlDialog::setSelectedMints;
+std::set<CMintMeta> ZBeetControlDialog::setMints;
 
 ZBeetControlDialog::ZBeetControlDialog(QWidget *parent) :
     QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),
