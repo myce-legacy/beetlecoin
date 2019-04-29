@@ -1933,7 +1933,7 @@ int64_t GetBlockValue(int nHeight)
     } else if (nHeight > 9 && nHeight <= 2501) {
         nSubsidy = 5 * COIN;
     } else {
-        int64_t nMoneySupply = chainActive[nHeight-1]->nMoneySupply;
+        int64_t nMoneySupply = chainActive[nHeight-1] != NULL ? chainActive[nHeight-1]->nMoneySupply : chainActive.Tip()->nMoneySupply;
 
         if (nMoneySupply < Params().FirstSupplyReduction()) {
             nSubsidy = 75 * COIN;
@@ -1980,7 +1980,7 @@ int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue)
 
 bool IsTreasuryBlock(int nHeight)
 {
-    if (nHeight <= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)) { //Params().TreasuryStartBlock() the block reward is reduced beginning with TreasuryStartBlock to later be put into a payment
+    if (nHeight <= GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)) { //Params().TreasuryStartBlock() the block reward is reduced after TreasuryStartBlock to later be put into a payment
         return false;
     } else if ((nHeight-GetSporkValue(SPORK_17_TREASURY_PAYMENT_ENFORCEMENT)) % Params().TreasuryBlockStep() == 0) { //Params().TreasuryStartBlock()
         return true;
@@ -2993,7 +2993,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     CAmount nExpectedMint = GetBlockValue(pindex->pprev->nHeight) + GetTreasuryAward(pindex->nHeight);
     if (block.IsProofOfWork())
         nExpectedMint += nFees;
-    LogPrintf("ConnectBlock(): INFO : Block reward (actual=%s vs limit=%s) maximum: %s\n", FormatMoney(pindex->nMint), FormatMoney(nExpectedMint), FormatMoney(pindex->nMint) == FormatMoney(nExpectedMint));
+    //LogPrintf("ConnectBlock(): INFO : Block reward (actual=%s vs limit=%s) maximum: %s\n", FormatMoney(pindex->nMint), FormatMoney(nExpectedMint), FormatMoney(pindex->nMint) == FormatMoney(nExpectedMint));
 
     //Check that the block does not overmint
     if (!IsBlockValueValid(block, nExpectedMint, pindex->nMint)) {

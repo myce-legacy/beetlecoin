@@ -195,7 +195,7 @@ bool IsBlockValueValid(const CBlock& block, CAmount nExpectedValue, CAmount nMin
 
     //check if it's valid treasury block
     if (IsTreasuryBlock(nHeight)) {
-        const CTransaction& txNew = (block.IsProofOfStake() ? block.vtx[1] : block.vtx[0]);
+        const CTransaction& txNew = block.IsProofOfStake() ? block.vtx[1] : block.vtx[0];
         CScript treasuryPayee = Params().GetTreasuryRewardScriptAtHeight(nHeight);
         //CAmount blockValue = GetBlockValue(nHeight-1);
         CAmount treasuryAmount = GetTreasuryAward(nHeight);
@@ -259,7 +259,7 @@ bool IsBlockPayeeValid(const CBlock& block, int nBlockHeight)
         return true;
     }
 
-    const CTransaction& txNew = (block.IsProofOfStake() ? block.vtx[1] : block.vtx[0]);
+    const CTransaction& txNew = block.IsProofOfStake() ? block.vtx[1] : block.vtx[0];
 
     //check if it's a budget block
     if (IsSporkActive(SPORK_13_ENABLE_SUPERBLOCKS)) {
