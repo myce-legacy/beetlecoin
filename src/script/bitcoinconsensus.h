@@ -53,8 +53,6 @@ enum {
     bitcoinconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY = (1U << 4),
     // enable CHECKLOCKTIMEVERIFY (BIP65)
     bitcoinconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9),
-    // enable CHECKSEQUENCEVERIFY (BIP112)
-    bitcoinconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY = (1U << 10),
 };
 
 /// Returns 1 if the input nIn of the serialized transaction pointed to by
